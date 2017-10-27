@@ -3,4 +3,5 @@ target_link_libraries(tx_pipeline_integration_test
     application
     raw_block_insertion
     model_generators
+    ${Boost_LIBRARIES}
     )

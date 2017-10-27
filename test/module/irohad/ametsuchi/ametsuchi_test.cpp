@@ -41,7 +41,7 @@ using namespace framework::test_subscriber;
 TEST_F(AmetsuchiTest, GetBlocksCompletedWhenCalled) {
   // Commit block => get block => observable completed
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto blocks = storage->getBlockQuery();
 
@@ -60,7 +60,7 @@ TEST_F(AmetsuchiTest, GetBlocksCompletedWhenCalled) {
 
 TEST_F(AmetsuchiTest, SampleTest) {
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
   auto blocks = storage->getBlockQuery();
@@ -223,7 +223,7 @@ TEST_F(AmetsuchiTest, SampleTest) {
 
 TEST_F(AmetsuchiTest, PeerTest) {
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
 
@@ -251,7 +251,7 @@ TEST_F(AmetsuchiTest, PeerTest) {
 
 TEST_F(AmetsuchiTest, queryGetAccountAssetTransactionsTest) {
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
   auto blocks = storage->getBlockQuery();
@@ -521,7 +521,7 @@ TEST_F(AmetsuchiTest, queryGetAccountAssetTransactionsTest) {
 
 TEST_F(AmetsuchiTest, AddSignatoryTest) {
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
 
@@ -793,7 +793,7 @@ TEST_F(AmetsuchiTest, TestingStorageWhenInsertBlock) {
       "=> insert block "
       "=> assert that inserted");
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
   ASSERT_EQ(0, wsv->getPeers().value().size());
@@ -827,7 +827,7 @@ TEST_F(AmetsuchiTest, TestingStorageWhenDropAll) {
       "=> insert block "
       "=> assert that inserted");
   auto storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_TRUE(storage);
   auto wsv = storage->getWsvQuery();
   ASSERT_EQ(0, wsv->getPeers().value().size());
@@ -847,7 +847,7 @@ TEST_F(AmetsuchiTest, TestingStorageWhenDropAll) {
 
   ASSERT_EQ(0, wsv->getPeers().value().size());
   auto new_storage =
-      StorageImpl::create(block_store_path, redishost_, redisport_, pgopt_);
+      StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_EQ(0, wsv->getPeers().value().size());
   new_storage->dropStorage();
 }

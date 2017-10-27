@@ -24,6 +24,14 @@
 #include <gtest/gtest.h>
 #include <cpp_redis/cpp_redis>
 #include <pqxx/pqxx>
+#include "main/env-vars.hpp"
+#include "util/string.hpp"
+#include "main/common.hpp"
+
+using namespace std::literals::string_literals;
+using iroha::string::parseEnv;
+#define LOCALHOST "127.0.0.1"s
+#define ALLHOST "0.0.0.0"s
 
 namespace iroha {
   namespace ametsuchi {
@@ -31,28 +39,27 @@ namespace iroha {
      * Class with ametsuchi initialization
      */
     class AmetsuchiTest : public ::testing::Test {
+     public:
+      iroha::config::Redis redis;
+      iroha::config::Postgres postgres;
+      iroha::config::BlockStorage storage;
+
      protected:
       virtual void SetUp() {
         auto log = logger::testLog("AmetsuchiTest");
 
-        mkdir(block_store_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        auto pg_host = std::getenv("IROHA_POSTGRES_HOST");
-        auto pg_port = std::getenv("IROHA_POSTGRES_PORT");
-        auto pg_user = std::getenv("IROHA_POSTGRES_USER");
-        auto pg_pass = std::getenv("IROHA_POSTGRES_PASSWORD");
-        auto rd_host = std::getenv("IROHA_REDIS_HOST");
-        auto rd_port = std::getenv("IROHA_REDIS_PORT");
-        if (not pg_host) {
-          return;
-        }
-        std::stringstream ss;
-        ss << "host=" << pg_host << " port=" << pg_port << " user=" << pg_user
-           << " password=" << pg_pass;
-        pgopt_ = ss.str();
-        redishost_ = rd_host;
-        redisport_ = std::stoull(rd_port);
-        log->info("host={}, port={}, user={}, password={}", pg_host, pg_port,
-                  pg_user, pg_pass);
+        redis.host = parseEnv(IROHA_RDHOST, LOCALHOST);
+        redis.port = parseEnv(IROHA_RDPORT, 6379);
+
+        postgres.host = parseEnv(IROHA_PGHOST, LOCALHOST);
+        postgres.port = parseEnv(IROHA_PGPORT, 5432);
+        postgres.database = parseEnv(IROHA_PGDATABASE, "iroha"s);
+        postgres.username = parseEnv(IROHA_PGUSER, "postgres"s);
+        postgres.password = parseEnv(IROHA_PGPASSWORD, "mysecretpassword"s);
+
+        storage.path = parseEnv(IROHA_BLOCKSPATH, "/tmp/blocks"s);
+
+        mkdir(storage.path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       }
       virtual void TearDown() {
         const auto drop = R"(
@@ -69,28 +76,20 @@ DROP TABLE IF EXISTS peer;
 DROP TABLE IF EXISTS role;
 )";
 
-        pqxx::connection connection(pgopt_);
+        pqxx::connection connection(this->postgres.options());
         pqxx::work txn(connection);
         txn.exec(drop);
         txn.commit();
         connection.disconnect();
 
         cpp_redis::redis_client client;
-        client.connect(redishost_, redisport_);
+        client.connect(this->redis.host, this->redis.port);
         client.flushall();
         client.sync_commit();
         client.disconnect();
 
-        iroha::remove_all(block_store_path);
+        iroha::remove_all(this->storage.path);
       }
-
-      std::string pgopt_ =
-          "host=localhost port=5432 user=postgres password=mysecretpassword";
-
-      std::string redishost_ = "localhost";
-      size_t redisport_ = 6379;
-
-      std::string block_store_path = "/tmp/block_store";
     };
   }  // namespace ametsuchi
 }  // namespace iroha

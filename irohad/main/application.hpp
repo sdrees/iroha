@@ -46,41 +46,15 @@
 #include "validation/impl/chain_validator_impl.hpp"
 #include "validation/impl/stateful_validator_impl.hpp"
 
-class Irohad {
- public:
-  /**
-   * Constructor that initializes common iroha pipeline
-   * @param block_store_dir - folder where blocks will be stored
-   * @param redis_host - host of redis connection
-   * @param redis_port - port of redis connection
-   * @param pg_conn - initialization string for postgre
-   * @param torii_port - port for torii binding
-   * @param internal_port - port for internal communication - ordering service,
-   * consensus, and block loader
-   * @param max_proposal_size - maximum transactions that possible appears in
-   * one proposal
-   * @param proposal_delay - maximum waiting time util emitting new proposal
-   * @param vote_delay - waiting time before sending vote to next peer
-   * @param load_delay - waiting time before loading committed block from next
-   * peer
-   * @param keypair - public and private keys for crypto provider
-   */
-  Irohad(const std::string &block_store_dir,
-         const std::string &redis_host,
-         size_t redis_port,
-         const std::string &pg_conn,
-         size_t torii_port,
-         size_t internal_port,
-         size_t max_proposal_size,
-         std::chrono::milliseconds proposal_delay,
-         std::chrono::milliseconds vote_delay,
-         std::chrono::milliseconds load_delay,
-         const iroha::keypair_t &keypair);
+#include "main/common.hpp"
 
-  /**
-   * Initialization of whole objects in system
-   */
-  virtual void init();
+using namespace iroha::config;
+
+using namespace std::literals::chrono_literals;
+
+class Application {
+ public:
+  Application();
 
   /**
    * Drop wsv and block store
@@ -90,30 +64,30 @@ class Irohad {
   /**
    * Run worker threads for start performing
    */
-  virtual void run();
+  virtual void run(const Torii &);
 
-  virtual ~Irohad();
+  virtual ~Application();
 
- protected:
   // -----------------------| component initialization |------------------------
 
-  virtual void initStorage();
-
+  virtual void initStorage(const Postgres &,
+                           const Redis &,
+                           const BlockStorage &);
   virtual void initProtoFactories();
 
   virtual void initPeerQuery();
 
-  virtual void initCryptoProvider();
+  virtual void initCryptoProvider(const Cryptography &);
 
   virtual void initValidators();
 
-  virtual void initOrderingGate();
+  virtual void initOrderingGate(const OtherOptions &other);
 
   virtual void initSimulator();
 
   virtual void initBlockLoader();
 
-  virtual void initConsensusGate();
+  virtual void initConsensusGate(const Torii &, const OtherOptions &);
 
   virtual void initSynchronizer();
 
@@ -123,20 +97,7 @@ class Irohad {
 
   virtual void initQueryService();
 
-  // constructor dependencies
-  std::string block_store_dir_;
-  std::string redis_host_;
-  size_t redis_port_;
-  std::string pg_conn_;
-  size_t torii_port_;
-  size_t internal_port_;
-  size_t max_proposal_size_;
-  std::chrono::milliseconds proposal_delay_;
-  std::chrono::milliseconds vote_delay_;
-  std::chrono::milliseconds load_delay_;
-
-  // ------------------------| internal dependencies |-------------------------
-
+ protected:
   // converter factories
   std::shared_ptr<iroha::model::converters::PbTransactionFactory> pb_tx_factory;
   std::shared_ptr<iroha::model::converters::PbQueryFactory> pb_query_factory;
@@ -186,7 +147,7 @@ class Irohad {
   iroha::consensus::yac::YacInit yac_init;
   iroha::network::BlockLoaderInit loader_init;
 
-  std::thread internal_thread, server_thread;
+  std::thread server_thread;
 
   logger::Logger log_;
 

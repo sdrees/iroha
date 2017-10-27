@@ -36,7 +36,8 @@ namespace iroha {
 
       void SetUp() override {
         AmetsuchiTest::SetUp();
-        postgres_connection = std::make_unique<pqxx::lazyconnection>(pgopt_);
+        postgres_connection =
+            std::make_unique<pqxx::lazyconnection>(this->postgres.options());
         try {
           postgres_connection->activate();
         } catch (const pqxx::broken_connection &e) {

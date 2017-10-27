@@ -75,7 +75,7 @@ find_package(rxcpp)
 find_package(tbb)
 
 ##########################
-# boost multiprecision   #
+#          boost         #
 ##########################
 find_package(Boost REQUIRED
     COMPONENTS
@@ -90,5 +90,11 @@ find_package(Boost REQUIRED
 if(BENCHMARKING)
   find_package(benchmark)
 endif()
+
+
+##########################
+#       cliutils         #
+##########################
+find_package(cliutils)
 
 

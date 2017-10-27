@@ -55,13 +55,13 @@ target_link_libraries(application
     block_loader_service
     )
 
-add_executable(irohad irohad.cpp)
+add_executable(irohad main.cpp)
 target_link_libraries(irohad
+    cliutils
     application
     raw_block_insertion
-    gflags
     rapidjson
-    keys_manager
+    ${Boost_LIBRARIES}
     )
 
 add_install_step_for_bin(irohad)
