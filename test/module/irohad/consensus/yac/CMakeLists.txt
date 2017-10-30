@@ -19,11 +19,13 @@
 addtest(cluster_order_test cluster_order_test.cpp)
 target_link_libraries(cluster_order_test
     yac
+    ${Boost_LIBRARIES}
     )
 
 addtest(yac_cold_case_test yac_simple_cold_case_test.cpp)
 target_link_libraries(yac_cold_case_test
     yac
+    ${Boost_LIBRARIES}
     )
 
 addtest(yac_sunny_day_test yac_sunny_day_test.cpp)
@@ -55,6 +57,7 @@ target_link_libraries(yac_network_test
 addtest(yac_peer_orderer_test peer_orderer_test.cpp)
 target_link_libraries(yac_peer_orderer_test
     yac
+    ${Boost_LIBRARIES}
     )
 
 addtest(yac_gate_test yac_gate_test.cpp)

@@ -19,6 +19,7 @@
 #define IROHA_NETWORK_HPP_
 
 #include <cstdint>
+#include <limits>
 #include <string>
 #include "string.hpp"
 
@@ -26,26 +27,24 @@ namespace iroha {
   namespace network {
 
     /**
-     * @tparam T integer type
      * @return true if 2^16 > port > 0, false otherwise.
      */
-    template<typename T>
-    constexpr inline bool is_port_valid(T port) {
-      return std::numeric_limits<T>::is_integer && port > 0
-          && port < 65535 /* 1 << 16 - 1 */;
+    constexpr inline bool is_port_valid(uint64_t port) {
+      return port > 0 && port < 65536 /* 1 << 16 */;
     }
 
     /**
      * It is not possible to determine all possible types of hostnames, since
      * they may be localized (domain .рф in Russia is example).
      *
+     * @todo probably it is good to resolve a hostname to determine if it is valid or not
      * @return true if given string looks like a domain name or ip.
      */
     inline bool is_host_valid(const std::string &host) {
-      return !host.empty() && string::is_printable(host);
+      return !host.empty() && host.size() <= 253 /* max size is 253 for domains */;
     }
 
-  } // namespace network
-} // namespace iroha
+  } //   namespace network
+} //   namespace iroha
 
 #endif  //  IROHA_NETWORK_HPP_

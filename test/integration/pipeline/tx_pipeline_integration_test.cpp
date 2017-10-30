@@ -15,24 +15,23 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
+#include <cstdio>
+#include <cstring>
+
 #include "crypto/hash.hpp"
 #include "crypto/keys_manager_impl.hpp"
 #include "datetime/time.hpp"
 #include "framework/test_subscriber.hpp"
 #include "main/application.hpp"
 #include "main/common.hpp"
+#include "main/env-vars.hpp"
 #include "main/raw_block_insertion.hpp"
 #include "model/generators/block_generator.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_fixture.hpp"
 #include "util/string.hpp"
-#include "main/env-vars.hpp"
 
-#include <boost/filesystem.hpp>
-#include <cstdio>
-#include <string.h>
-
-
-using iroha::string::parseEnv;
+using iroha::string::parse_env;
 using namespace framework::test_subscriber;
 using namespace std::chrono_literals;
 
@@ -64,18 +63,17 @@ class TestIrohad : public Application {
 using namespace iroha;
 
 class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
-
  public:
   TxPipelineIntegrationTest() {
     // spdlog::set_level(spdlog::level::off);
 
-    torii.host = parseEnv(IROHA_HOST, LOCALHOST);
-    torii.port = parseEnv(IROHA_PORT, 50051);
+    torii.host = parse_env(IROHA_HOST, LOCALHOST);
+    torii.port = parse_env(IROHA_PORT, 50051);
 
-    other.load_delay = parseEnv(IROHA_OTHER_LOADDELAY, 5000);
-    other.vote_delay = parseEnv(IROHA_OTHER_VOTEDELAY, 5000);
-    other.proposal_delay = parseEnv(IROHA_OTHER_PROPOSALDELAY, 5000);
-    other.max_proposal_size = parseEnv(IROHA_OTHER_PROPOSALSIZE, 10);
+    other.load_delay = parse_env(IROHA_OTHER_LOADDELAY, 5000);
+    other.vote_delay = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
+    other.proposal_delay = parse_env(IROHA_OTHER_PROPOSALDELAY, 5000);
+    other.max_proposal_size = parse_env(IROHA_OTHER_PROPOSALSIZE, 10);
   }
 
   config::Torii torii{};

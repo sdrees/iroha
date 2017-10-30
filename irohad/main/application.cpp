@@ -251,10 +251,9 @@ void Application::run(const Torii &torii) {
   POSTCONDITION_TRUE(torii_server);
 
   grpc::ServerBuilder builder;
-  int *port{};
+  int port;
   builder.AddListeningPort(
-      torii.listenAddress(), grpc::InsecureServerCredentials(), port);
-  POSTCONDITION_TRUE(port);
+      torii.listenAddress(), grpc::InsecureServerCredentials(), &port);
 
   PRECONDITION_TRUE(ordering_init.ordering_gate_transport);
   PRECONDITION_TRUE(ordering_init.ordering_service_transport);

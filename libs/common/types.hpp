@@ -23,8 +23,8 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <typeinfo>
 #include <type_traits>
+#include <typeinfo>
 #include <vector>
 
 #include <nonstd/optional.hpp>
@@ -42,8 +42,22 @@ namespace iroha {
   using BadFormatException = std::invalid_argument;
   using byte_t = uint8_t;
 
-  static const std::string code = {'0', '1', '2', '3', '4', '5', '6', '7',
-                                   '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+  static const std::string code = {'0',
+                                   '1',
+                                   '2',
+                                   '3',
+                                   '4',
+                                   '5',
+                                   '6',
+                                   '7',
+                                   '8',
+                                   '9',
+                                   'a',
+                                   'b',
+                                   'c',
+                                   'd',
+                                   'e',
+                                   'f'};
 
   /**
    * Base type which represents blob of fixed size.
@@ -56,7 +70,6 @@ namespace iroha {
   template <size_t size_>
   class blob_t : public std::array<byte_t, size_> {
    public:
-
     /**
      * Initialize blob value
      */

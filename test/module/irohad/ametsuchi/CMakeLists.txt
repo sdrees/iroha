@@ -2,12 +2,14 @@ addtest(ametsuchi_test ametsuchi_test.cpp)
 target_link_libraries(ametsuchi_test
     ametsuchi
     libs_common
+    ${Boost_LIBRARIES}
     )
 
 addtest(wsv_query_command_test wsv_query_command_test.cpp)
 target_link_libraries(wsv_query_command_test
     ametsuchi
     libs_common
+    ${Boost_LIBRARIES}
     )
 
 addtest(flat_file_test flat_file_test.cpp)

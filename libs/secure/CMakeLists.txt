@@ -1,4 +1,4 @@
-add_library(util-secure
+add_library(libs-util-secure
     util.hpp
-    util.cpp
+    detail/util.cpp
     )

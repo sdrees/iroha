@@ -22,6 +22,7 @@
 #include <boost/assert.hpp>
 #include <functional>
 #include <random>
+#include "secure/detail/base_prng.hpp"
 
 namespace iroha {
   namespace secure {
@@ -29,59 +30,42 @@ namespace iroha {
     /**
      * @class prng
      * @brief Pseudo Random Number Generator, seeded by random uint64
-     * @tparam IntType arbitrary integer type, such as uint8 or uint64.
+     * @tparam Distribution.
      */
-    template <typename IntType>
-    class prng {
+    template <typename Distribution>
+    class PRNG final: public BasePRNG {
      public:
+      using result_type = typename Distribution::result_type;
+
       /**
        * @brief Constructor. PRNG returns values in range [min, max)
        * @param min
        * @param max
        */
-      prng(IntType min = std::numeric_limits<IntType>::min(),
-           IntType max = std::numeric_limits<IntType>::max(),
-           uint64_t seed = true_random_uint64())
-          : dis(min, max), tw(/* seed engine with */ seed) {}
+      PRNG(uint64_t seed = BasePRNG::true_random_uint64()) : BasePRNG(seed) {}
 
       /**
        * @brief Get random number of 'IntType'.
        * @return random integer number with uniform distribution.
        */
-      IntType get() { return dis(tw); }
+      result_type get() { return dis(tw); }
 
       /**
        * @brief Get 'size' random numbers.
        * @param size the size of returned vector.
        * @return vector of random numbers.
        */
-      std::vector<IntType> get(size_t size) {
-        std::vector<IntType> v(size);
+      std::vector<result_type> get(size_t size) {
+        std::vector<result_type> v(size);
         std::generate_n(v.begin(), size, [this]() { return dis(tw); });
         BOOST_ASSERT_MSG(v.size() == size, "bad vector size");
         return v;
       }
 
-      /**
-       * @brief Cryptographically secure true random 64 bit generator, which can
-       * be used for seeding. 32-bit seeds are not safe to use.
-       * @return 64 bits of true randomness.
-       */
-      static uint64_t true_random_uint64() {
-        // rd() returns only 32 bits, we want 64.
-        uint64_t seed = rd();        // top 32 random bits
-        seed = (seed << 32) | rd();  // bottom 32 random bits
-        return seed;
-      }
-
      private:
-      static std::random_device rd;
-      std::uniform_int_distribution<IntType> dis;
-      std::mt19937_64 tw;
+      Distribution dis;
     };
 
-    template <typename IntType>
-    std::random_device prng<IntType>::rd{};
   }  // namespace secure
 }  // namespace iroha
 

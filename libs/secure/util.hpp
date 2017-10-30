@@ -25,42 +25,31 @@ namespace iroha {
   namespace secure {
 
     /**
-     * @brief Secure erase of memory. Guarantees that given buffer will contain
-     * zeroes after function completes.
+     * @brief Secure erase of memory.
+     * Guarantees that given buffer will contain zeroes after function completes.
      * @param[in] dest memory to be erased.
      * @param[in] size size of memory in bytes.
      */
     void erase(void *dest, size_t size);
 
-    /** @brief Secure move from src to dest. Copies data first and then
-     * securely erases src. Destination memory should be at least same size as
-     * source.
+    /** @brief Secure move from src to dest.
+     * Copies data first and then securely erases src.
+     * Destination memory should be at least same size as source.
      * @param[out] dest destination memory
      * @param[in/out] src sources memory, will be erased at the end
-     * @param size size of memory in bytes
+     * @param size size ofs src memory in bytes
      */
     void move(void *dest, void *src, size_t size);
 
     /**
-     * @brief Secure compare of two chunks of memory. Resistant to timing
-     * attacks.
+     * @brief Secure compare of two chunks of memory.
+     * Resistant to timing attacks.
      * @param lhs
      * @param rhs
      * @param size both chunks should be the same size.
      * @return true if memory chunks are equal, false otherwise.
      */
     bool compare(void *lhs, void *rhs, size_t size);
-
-    /**
-     * @brief Secure compare of two strings. Resistant to timing
-     * attacks.
-     * @param lhs
-     * @param rhs
-     * @param size both vectors should be the same size.
-     * @return true if vectors are equal, false otherwise.
-     */
-    bool compare(std::string const &lhs, std::string const &rhs);
-
   }  // namespace secure
 }  // namespace iroha
 

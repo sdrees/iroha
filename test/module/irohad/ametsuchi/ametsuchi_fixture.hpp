@@ -18,18 +18,20 @@
 #ifndef IROHA_AMETSUCHI_FIXTURE_HPP
 #define IROHA_AMETSUCHI_FIXTURE_HPP
 
-#include "common/files.hpp"
-#include "logger/logger.hpp"
-
 #include <gtest/gtest.h>
+#include <boost/filesystem.hpp>
 #include <cpp_redis/cpp_redis>
 #include <pqxx/pqxx>
+
+#include "common/files.hpp"
+#include "logger/logger.hpp"
+#include "main/common.hpp"
 #include "main/env-vars.hpp"
 #include "util/string.hpp"
-#include "main/common.hpp"
 
 using namespace std::literals::string_literals;
-using iroha::string::parseEnv;
+using iroha::string::parse_env;
+
 #define LOCALHOST "127.0.0.1"s
 #define ALLHOST "0.0.0.0"s
 
@@ -48,19 +50,24 @@ namespace iroha {
       virtual void SetUp() {
         auto log = logger::testLog("AmetsuchiTest");
 
-        redis.host = parseEnv(IROHA_RDHOST, LOCALHOST);
-        redis.port = parseEnv(IROHA_RDPORT, 6379);
+        redis.host = parse_env(IROHA_RDHOST, LOCALHOST);
+        redis.port = parse_env(IROHA_RDPORT, 6379);
 
-        postgres.host = parseEnv(IROHA_PGHOST, LOCALHOST);
-        postgres.port = parseEnv(IROHA_PGPORT, 5432);
-        postgres.database = parseEnv(IROHA_PGDATABASE, "iroha"s);
-        postgres.username = parseEnv(IROHA_PGUSER, "postgres"s);
-        postgres.password = parseEnv(IROHA_PGPASSWORD, "mysecretpassword"s);
+        postgres.host = parse_env(IROHA_PGHOST, LOCALHOST);
+        postgres.port = parse_env(IROHA_PGPORT, 5432);
+        postgres.database = parse_env(IROHA_PGDATABASE, "iroha"s);
+        postgres.username = parse_env(IROHA_PGUSER, "postgres"s);
+        postgres.password = parse_env(IROHA_PGPASSWORD, "mysecretpassword"s);
 
-        storage.path = parseEnv(IROHA_BLOCKSPATH, "/tmp/blocks"s);
+        storage.path = parse_env(IROHA_BLOCKSPATH, "/tmp/blocks"s);
 
-        mkdir(storage.path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        // throws basic_filesystem_error<std::string> if fails for any reason
+        // other than because the directory already exists.
+        // returns true, if directory is created, false otherwise, including
+        // case when directory existed.
+        boost::filesystem::create_directory(storage.path);
       }
+
       virtual void TearDown() {
         const auto drop = R"(
 DROP TABLE IF EXISTS account_has_signatory;

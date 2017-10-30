@@ -20,9 +20,10 @@
 
 #include <algorithm>
 #include <boost/assert.hpp>
+#include <boost/optional.hpp>
+#include <cstring>
 #include <sstream>
 #include <string>
-#include <string.h>
 
 namespace iroha {
   namespace string {
@@ -36,21 +37,29 @@ namespace iroha {
     /**
      * Parse arbitrary typeT: string, int, long, double... from
      * string-encoded format to T.
+     *
+     * @example T=double, s=std::string("1.337"), result will be 1.337
      * @tparam T
      * @throws std::exception if string can not be parsed.
      * @param s any string
      * @return
      */
     template <typename T>
-    T from_string(const std::string &s) {
-      // we think that check is performed in caller.
-      BOOST_ASSERT(!s.empty());
+    boost::optional<T> from_string(const char* s) {
+      if(!s) {
+        return boost::none;
+      }
 
       std::stringstream ss(s);
+      ss.exceptions();  // disable exceptions
       T result;
-      ss >> result;
-
-      return result;
+      // ss.eof() rejects this case
+      // from_string<int>("123a") => 123 - incorrect, should be none
+      if (ss >> result && ss.eof()) {
+        return result;
+      } else {
+        return boost::none;
+      }
     }
 
     /**
@@ -60,9 +69,8 @@ namespace iroha {
      * @param default_ default value, if variable does not exist
      */
     template <typename T>
-    T parseEnv(const char *name, T default_) {
-      auto v = std::getenv(name);
-      return v && strlen(v) > 0 ? from_string<T>(v) : default_;
+    T parse_env(const char *name, T default_) {
+      return from_string<T>(std::getenv(name)).value_or(default_);
     }
   }  // namespace string
 }  // namespace iroha

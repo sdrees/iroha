@@ -22,10 +22,18 @@
 
 using namespace iroha;
 
-#define STRINGIFY2(X) #X
-#define STRINGIFY(X) STRINGIFY2(X)
 #define ALLHOST "0.0.0.0"s
 #define LOCALHOST "localhost"s
+
+#ifdef IROHA_VERSION
+// it is a preprocessor trick, which converts X to "X" (const char*)
+// refer to https://stackoverflow.com/a/240370/1953079
+#define STRINGIFY2(X) #X
+#define STRINGIFY(X) STRINGIFY2(X)
+#define IROHA_VERSION_STR STRINGIFY(IROHA_VERSION)
+#else
+#define IROHA_VERSION_STR "undefined"
+#endif
 
 int main(int argc, char *argv[]) {
   auto log = logger::log("MAIN");
@@ -35,13 +43,7 @@ int main(int argc, char *argv[]) {
                 [&argv, &main](size_t) {
                   // note (@warchant): do not use logger here, it
                   // looks ugly.
-                  std::cout << argv[0] << " version " <<
-#ifdef IROHA_VERSION
-                      STRINGIFY(IROHA_VERSION)
-#else
-                            "undefined"
-#endif
-                            << std::endl;
+                  std::cout << argv[0] << " version " << IROHA_VERSION_STR;
                   exit(0);
                 },
                 "Current version"s);
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
   CLI11_PARSE(main, argc, argv);
 
   try {
-    // if something critical can not be parsed, throws exceptions
+    // if something critical can not be initialized, throws exceptions
     // descendants from std::exception
     Application irohad;
     irohad.initStorage(postgres, redis, storage);
@@ -114,27 +116,6 @@ int main(int argc, char *argv[]) {
     irohad.initPeerCommunicationService();
     irohad.initTransactionCommandService();
     irohad.initQueryService();
-
-    // TODO(@warchant): refactor. Move this to Iroha as a separate
-    // module
-
-    //    {  // bad :(
-    //      iroha::main::BlockInserter inserter(irohad.storage);
-    //
-    //      // throws if can not open file
-    //      //      auto content =
-    //      irohad.config().blockchainOptions().genesis_block;
-    //      auto block = inserter.parseBlock(content);
-    //      log->info("Block parsed");
-    //
-    //      if (block.has_value()) {
-    //        inserter.applyToLedger({block.value()});
-    //        log->info("Genesis block inserted, number of transactions: {} ",
-    //                  block.value().transactions.size());
-    //      } else {
-    //        throw std::logic_error("Block can not be parsed from JSON");
-    //      }
-    //    }
 
     // runs iroha
     log->info("iroha initialized");
