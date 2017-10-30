@@ -55,7 +55,7 @@ namespace iroha {
 
         postgres.host = parse_env(IROHA_PGHOST, LOCALHOST);
         postgres.port = parse_env(IROHA_PGPORT, 5432);
-        postgres.database = parse_env(IROHA_PGDATABASE, "iroha"s);
+        postgres.database = parse_env(IROHA_PGDATABASE, "postgres"s);
         postgres.username = parse_env(IROHA_PGUSER, "postgres"s);
         postgres.password = parse_env(IROHA_PGPASSWORD, "mysecretpassword"s);
 
