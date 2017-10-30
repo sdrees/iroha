@@ -23,7 +23,7 @@
 #include "main/env-vars.hpp"
 #include "util/network.hpp"
 
-using namespace std::literals::string_literals;
+using std::literals::string_literals::operator""s;
 
 inline void addPeerFlags(CLI::App *p,
                          iroha::config::Torii &torii,

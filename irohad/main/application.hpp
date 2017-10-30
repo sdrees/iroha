@@ -46,7 +46,12 @@
 #include "validation/impl/stateless_validator_impl.hpp"
 #include "validation/stateful_validator.hpp"
 
-using namespace iroha::config;
+using iroha::config::Postgres;
+using iroha::config::Redis;
+using iroha::config::BlockStorage;
+using iroha::config::OtherOptions;
+using iroha::config::Cryptography;
+using iroha::config::Torii;
 
 class Application {
  public:

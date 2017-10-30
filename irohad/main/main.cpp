@@ -21,6 +21,7 @@
 #include "main/flags.hpp"
 
 using namespace iroha;
+using std::literals::string_literals::operator""s;
 
 #define ALLHOST "0.0.0.0"s
 #define LOCALHOST "localhost"s
