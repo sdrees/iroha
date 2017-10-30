@@ -27,7 +27,7 @@ using namespace iroha;
 
 TEST(String, IsPrintable) {
   ASSERT_TRUE(string::is_printable("abcde"));
-  ASSERT_FALSE(string::is_printable("ab\x11de"));
+  ASSERT_FALSE(string::is_printable(std::string(5, 0x1)));
 }
 
 TEST(String, FromString) {
