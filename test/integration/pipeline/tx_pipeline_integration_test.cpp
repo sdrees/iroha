@@ -45,11 +45,9 @@ class TestIrohad : public Application {
 
   void run(const iroha::config::Torii &torii) override {
     grpc::ServerBuilder builder;
-    int *port = 0;
+    int port = 0;
     builder.AddListeningPort(
-        torii.listenAddress(), grpc::InsecureServerCredentials(), port);
-    BOOST_ASSERT_MSG(port != nullptr,
-                     "pipeline test: torii can not bind to port");
+        torii.listenAddress(), grpc::InsecureServerCredentials(), &port);
 
     builder.RegisterService(ordering_init.ordering_gate_transport.get());
     builder.RegisterService(ordering_init.ordering_service_transport.get());

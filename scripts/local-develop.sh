@@ -34,19 +34,21 @@ rdip=$(docker inspect $rdid | jq .[0].NetworkSettings.IPAddress | sed "s/\"//g")
 
 # print variables (stdout)
 cat << EOF
-export IROHA_POSTGRES_HOST=$pgip
-export IROHA_POSTGRES_PORT=$pgport
-export IROHA_POSTGRES_USER=$user
-export IROHA_POSTGRES_PASSWORD=$password
-export IROHA_REDIS_HOST=$rdip
-export IROHA_REDIS_PORT=$rdport
+export IROHA_PGHOST=$pgip
+export IROHA_PGPORT=$pgport
+export IROHA_PGUSER=$user
+export IROHA_PGDATABASE=$user
+export IROHA_PGPASSWORD=$password
+export IROHA_RDHOST=$rdip
+export IROHA_RDPORT=$rdport
 EOF
 
 # apply variables
-export IROHA_POSTGRES_HOST=$pgip
-export IROHA_POSTGRES_PORT=$pgport
-export IROHA_POSTGRES_USER=$user
-export IROHA_POSTGRES_PASSWORD=$password
-export IROHA_REDIS_HOST=$rdip
-export IROHA_REDIS_PORT=$rdport
+export IROHA_PGHOST=$pgip
+export IROHA_PGPORT=$pgport
+export IROHA_PGUSER=$user
+export IROHA_PGDATABASE=$user
+export IROHA_PGPASSWORD=$password
+export IROHA_RDHOST=$rdip
+export IROHA_RDPORT=$rdport
 

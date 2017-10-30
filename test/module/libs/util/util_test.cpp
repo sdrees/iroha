@@ -59,7 +59,7 @@ TEST(String, ParseEnv_EnvDoesNotExist) {
 }
 
 TEST(Network, IsPortValid) {
-  uint64_t bignum = 1 << 60 + 5432;
+  uint64_t bignum = ((uint64_t)1 << 33) + 5432;
   /// in case if is_port_valid received uint16_t below expression would be true,
   /// which is wrong.
   ASSERT_FALSE(network::is_port_valid(bignum));  // false negative
