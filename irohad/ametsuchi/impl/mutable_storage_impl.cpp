@@ -47,7 +47,7 @@ namespace iroha {
         auto account_id = tx.creator_account_id;
 
         // to make index account_id -> list of blocks where his txs exist
-        index_->rpush(account_id, {std::to_string(height)});
+        index_->sadd(account_id, {std::to_string(height)});
 
         // to make index account_id:height -> list of tx indexes (where
         // tx is placed in the block)
