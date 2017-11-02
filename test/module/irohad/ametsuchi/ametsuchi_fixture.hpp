@@ -25,8 +25,8 @@
 
 #include "common/files.hpp"
 #include "logger/logger.hpp"
-#include "main/common.hpp"
-#include "main/env-vars.hpp"
+#include "main/cli/config.hpp"
+#include "main/cli/env-vars.hpp"
 #include "util/string.hpp"
 
 using namespace std::literals::string_literals;

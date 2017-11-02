@@ -23,7 +23,7 @@
 #include "ametsuchi/impl/temporary_wsv_impl.hpp"
 #include "model/converters/json_common.hpp"
 
-#include "main/common.hpp"
+#include "main/cli/config.hpp"
 
 namespace iroha {
   namespace ametsuchi {
@@ -133,7 +133,7 @@ namespace iroha {
       return inserted;
     }
 
-    void StorageImpl::dropStorage() {
+    void StorageImpl::drop() {
       log_->info("Drop ledger");
       auto drop = R"(
 DROP TABLE IF EXISTS account_has_signatory;

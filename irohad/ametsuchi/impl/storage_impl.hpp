@@ -18,18 +18,15 @@
 #ifndef IROHA_STORAGE_IMPL_HPP
 #define IROHA_STORAGE_IMPL_HPP
 
-#include "ametsuchi/storage.hpp"
-
-#include "main/common.hpp"
-
 #include <cmath>
-#include <shared_mutex>
-
 #include <cpp_redis/cpp_redis>
 #include <nonstd/optional.hpp>
 #include <pqxx/pqxx>
+#include <shared_mutex>
 #include "ametsuchi/impl/flat_file/flat_file.hpp"
+#include "ametsuchi/storage.hpp"
 #include "logger/logger.hpp"
+#include "main/cli/config.hpp"
 #include "model/converters/json_block_factory.hpp"
 
 namespace iroha {
@@ -70,7 +67,7 @@ namespace iroha {
 
       virtual bool insertBlock(model::Block block) override;
 
-      virtual void dropStorage() override;
+      virtual void drop() override;
 
       void commit(std::unique_ptr<MutableStorage> mutableStorage) override;
 

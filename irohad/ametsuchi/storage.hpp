@@ -48,7 +48,7 @@ namespace iroha {
       /**
        * Remove all information from ledger
        */
-      virtual void dropStorage() = 0;
+      virtual void drop() = 0;
 
       virtual ~Storage() = default;
     };

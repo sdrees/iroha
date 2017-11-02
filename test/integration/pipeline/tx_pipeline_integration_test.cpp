@@ -24,8 +24,8 @@
 #include "datetime/time.hpp"
 #include "framework/test_subscriber.hpp"
 #include "main/application.hpp"
-#include "main/common.hpp"
-#include "main/env-vars.hpp"
+#include "main/cli/config.hpp"
+#include "main/cli/env-vars.hpp"
 #include "main/raw_block_insertion.hpp"
 #include "model/generators/block_generator.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_fixture.hpp"
@@ -65,8 +65,8 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
   TxPipelineIntegrationTest() {
     // spdlog::set_level(spdlog::level::off);
 
-    torii.host = parse_env(IROHA_HOST, LOCALHOST);
-    torii.port = parse_env(IROHA_PORT, 50051);
+    torii.host = parse_env(IROHA_TORII_HOST, LOCALHOST);
+    torii.port = parse_env(IROHA_TORII_PORT, 50051);
 
     other.load_delay = parse_env(IROHA_OTHER_LOADDELAY, 5000);
     other.vote_delay = parse_env(IROHA_OTHER_VOTEDELAY, 5000);

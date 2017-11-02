@@ -96,9 +96,9 @@ namespace iroha {
 
     struct OtherOptions {
       size_t max_proposal_size;
-      size_t proposal_delay;
-      size_t vote_delay;
-      size_t load_delay;
+      std::chrono::milliseconds proposal_delay;
+      std::chrono::milliseconds vote_delay;
+      std::chrono::milliseconds load_delay;
     };
   }  // namespace config
 }  // namespace iroha

@@ -22,7 +22,7 @@
 #include "ametsuchi/impl/storage_impl.hpp"
 #include "crypto/crypto.hpp"
 #include "logger/logger.hpp"
-#include "main/common.hpp"
+#include "main/cli/config.hpp"
 #include "main/impl/block_loader_init.hpp"
 #include "main/impl/consensus_init.hpp"
 #include "main/impl/ordering_init.hpp"
@@ -56,11 +56,6 @@ using iroha::config::Torii;
 class Application {
  public:
   Application();
-
-  /**
-   * Drop wsv and block store
-   */
-  virtual void dropStorage();
 
   /**
    * Run worker threads for start performing

@@ -47,8 +47,6 @@ Application::~Application() {
   }
 }
 
-void Application::dropStorage() { storage->dropStorage(); }
-
 void Application::initStorage(const Postgres &pg,
                               const Redis &rd,
                               const BlockStorage &bs) {
@@ -110,10 +108,8 @@ void Application::initValidators() {
 void Application::initOrderingGate(const OtherOptions &other) {
   PRECONDITION_TRUE(wsv);
 
-  auto proposal_delay = std::chrono::milliseconds(other.proposal_delay);
-
   ordering_gate = ordering_init.initOrderingGate(
-      wsv, other.max_proposal_size, proposal_delay);
+      wsv, other.max_proposal_size, other.proposal_delay);
 
   POSTCONDITION_TRUE(ordering_gate);
 
@@ -157,16 +153,13 @@ void Application::initConsensusGate(const Torii &torii,
   PRECONDITION_TRUE(simulator);
   PRECONDITION_TRUE(block_loader);
 
-  auto vote_delay = std::chrono::milliseconds(other.vote_delay);
-  auto load_delay = std::chrono::milliseconds(other.load_delay);
-
   consensus_gate = yac_init.initConsensusGate(torii.listenAddress(),
                                               wsv,
                                               simulator,
                                               block_loader,
                                               keypair,
-                                              vote_delay,
-                                              load_delay);
+                                              other.vote_delay,
+                                              other.load_delay);
 
   POSTCONDITION_TRUE(consensus_gate);
 

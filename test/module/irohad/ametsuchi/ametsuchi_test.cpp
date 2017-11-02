@@ -809,7 +809,7 @@ TEST_F(AmetsuchiTest, TestingStorageWhenInsertBlock) {
 
   log->info("Drop ledger");
 
-  storage->dropStorage();
+  storage->drop();
 }
 
 TEST_F(AmetsuchiTest, TestingStorageWhenDropAll) {
@@ -843,13 +843,13 @@ TEST_F(AmetsuchiTest, TestingStorageWhenDropAll) {
 
   log->info("Drop ledger");
 
-  storage->dropStorage();
+  storage->drop();
 
   ASSERT_EQ(0, wsv->getPeers().value().size());
   auto new_storage =
       StorageImpl::create(this->postgres, this->redis, this->storage);
   ASSERT_EQ(0, wsv->getPeers().value().size());
-  new_storage->dropStorage();
+  new_storage->drop();
 }
 
 /**

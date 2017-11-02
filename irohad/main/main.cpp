@@ -16,12 +16,12 @@
  */
 
 #include <boost/filesystem.hpp>
-
-#include "main/application.hpp"
-#include "main/flags.hpp"
+#include "main/cli/flags.hpp"
+#include "main/cli/handler/all.hpp"
 
 using namespace iroha;
-using std::literals::string_literals::operator""s;
+using std::literals::string_literals::operator""s;   // std::string
+using std::literals::chrono_literals::operator""ms;  // milliseconds
 
 #define ALLHOST "0.0.0.0"s
 #define LOCALHOST "localhost"s
@@ -37,14 +37,13 @@ using std::literals::string_literals::operator""s;
 #endif
 
 int main(int argc, char *argv[]) {
-  auto log = logger::log("MAIN");
-  CLI::App main("iroha - simple decentralized ledger");
+  CLI::App main("iroha - simple decentralized ledger"s);
   main.require_subcommand(1);
   main.add_flag("-v,--version"s,
                 [&argv, &main](size_t) {
                   // note (@warchant): do not use logger here, it
                   // looks ugly.
-                  std::cout << argv[0] << " version " << IROHA_VERSION_STR;
+                  std::cout << argv[0] << " version " IROHA_VERSION_STR "\n";
                   exit(0);
                 },
                 "Current version"s);
@@ -55,9 +54,9 @@ int main(int argc, char *argv[]) {
   torii.port = 50051;
 
   config::OtherOptions other{};
-  other.load_delay = 5000;
-  other.vote_delay = 5000;
-  other.proposal_delay = 5000;
+  other.load_delay = 5000ms;
+  other.vote_delay = 5000ms;
+  other.proposal_delay = 5000ms;
   other.max_proposal_size = 10;
 
   config::Redis redis{};
@@ -67,7 +66,6 @@ int main(int argc, char *argv[]) {
   config::Postgres postgres{};
   postgres.host = LOCALHOST;
   postgres.port = 5432;
-  postgres.database = "iroha";
 
   config::BlockStorage storage{};
   storage.path = "blocks"s;
@@ -75,56 +73,59 @@ int main(int argc, char *argv[]) {
   config::Cryptography crypto{};
 
   /// OPTIONS
+  // start
   auto start = main.add_subcommand("start"s, "Start peer"s);
+  addPeerFlags(start, &torii, &crypto);
+  addPostgresFlags(start, &postgres);
+  addRedisFlags(start, &redis);
+  addBlockStorageFlags(start, &storage);
+  addOtherOptionsFlags(start, &other);
+  start->set_callback([&]() {
+    cli::handler::start(&postgres, &redis, &storage, &other, &crypto, &torii);
+  });
+
+  // ledger
   auto ledger =
       main.add_subcommand("ledger"s, "Manage ledger"s)->require_subcommand(1);
-  auto lcreate = ledger->add_subcommand(
+
+  // ledger create
+  auto ledger_create = ledger->add_subcommand(
       "create"s, "Create new network with given genesis block"s);
-  addCreateLedgerFlags(lcreate, [&argv, &log](std::string genesis) {
-    log->info("{} ledger create {} is called", argv[0], genesis);
-    BOOST_ASSERT_MSG(false, "not implemented");
+  addPostgresFlags(ledger_create, &postgres);
+  addRedisFlags(ledger_create, &redis);
+  addBlockStorageFlags(ledger_create, &storage);
+  addCreateLedgerFlags(ledger_create, [&](std::string genesis_path) {
+    // at this point we can be sure that file exists, because CLI performs check
+    std::ifstream f(genesis_path);
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    f.close();
+
+    std::string genesis_content = buffer.str();
+
+    cli::handler::ledger::create(&postgres, &redis, &storage, genesis_content);
   });
 
-  auto lclear = ledger->add_subcommand("clear"s, "Clear peer's ledger"s);
-  lclear->set_callback([&log, &argv]() {
-    // TODO (@warchant) 20/10/17: implement
-    log->info("{} ledger clear is called", argv[0]);
-    BOOST_ASSERT_MSG(false, "not implemented");
-  });
+  // ledger clear
+  auto ledger_clear =
+      ledger->add_subcommand("clear"s, "Clear peer's ledger"s, false);
+  addPostgresFlags(ledger_clear, &postgres);
+  addRedisFlags(ledger_clear, &redis);
+  addBlockStorageFlags(ledger_clear, &storage);
+  ledger_clear->set_callback(
+      [&]() { cli::handler::ledger::clear(&postgres, &redis, &storage); });
 
-  addPeerFlags(start, torii, crypto);
-  addPostgresFlags(start, postgres);
-  addRedisFlags(start, redis);
-  addBlockStorageFlags(start, storage);
-  addOtherOptionsFlags(start, other);
+  // config
+  auto config = main.add_subcommand("config"s, "Configuration management"s)
+                    ->require_subcommand(1);
+  auto config_show =
+      config->add_subcommand("show"s, "Show current config"s, false);
+  config_show->set_callback([&]() {
+    cli::handler::config::init(
+        &postgres, &redis, &storage, &other, &crypto, &torii);
+  });
 
   CLI11_PARSE(main, argc, argv);
-
-  try {
-    // if something critical can not be initialized, throws exceptions
-    // descendants from std::exception
-    Application irohad;
-    irohad.initStorage(postgres, redis, storage);
-    irohad.initProtoFactories();
-    irohad.initPeerQuery();
-    irohad.initCryptoProvider(crypto);
-    irohad.initValidators();
-    irohad.initOrderingGate(other);
-    irohad.initSimulator();
-    irohad.initBlockLoader();
-    irohad.initConsensusGate(torii, other);
-    irohad.initSynchronizer();
-    irohad.initPeerCommunicationService();
-    irohad.initTransactionCommandService();
-    irohad.initQueryService();
-
-    // runs iroha
-    log->info("iroha initialized");
-    irohad.run(torii);
-
-  } catch (const std::exception &e) {
-    log->error("FATAL: {}", e.what());
-  }
 
   return 0;
 }
