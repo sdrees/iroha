@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_PRIMITIVE_HPP
-#define IROHA_PRIMITIVE_HPP
+#ifndef IROHA_SHARED_MODEL_PRIMITIVE_HPP
+#define IROHA_SHARED_MODEL_PRIMITIVE_HPP
 
 #include <string>
 
@@ -85,4 +85,4 @@ namespace shared_model {
 
   }  // namespace interface
 }  // namespace shared_model
-#endif  // IROHA_PRIMITIVE_HPP
+#endif  // IROHA_SHARED_MODEL_PRIMITIVE_HPP
