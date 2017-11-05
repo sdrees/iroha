@@ -53,10 +53,10 @@ namespace iroha {
         iroha::sha3_256(test).to_string(), keypair.pubkey, sig);
   }
 
-  nonstd::optional<iroha::keypair_t> KeysManagerImpl::loadKeys() {
+  nonstd::optional<iroha::keypair_t> KeysManagerImpl::loadKeys(std::string pubpath, std::string privpath) {
     // Try to load from local file
-    std::ifstream priv_file(account_name_ + ".priv");
-    std::ifstream pub_file(account_name_ + ".pub");
+    std::ifstream priv_file(privpath);
+    std::ifstream pub_file(pubpath);
     if (not priv_file || not pub_file) {
       return nonstd::nullopt;
     }
@@ -66,15 +66,21 @@ namespace iroha {
     pub_file >> client_pub_key_;
 
     return nonstd::make_optional<iroha::keypair_t>()
-               | deserializeKeypairField(&iroha::keypair_t::pubkey,
-                                         client_pub_key_)
-               | deserializeKeypairField(&iroha::keypair_t::privkey,
-                                         client_priv_key_)
-               | [this](auto keypair) -> nonstd::optional<iroha::keypair_t> {
-      return this->validate(keypair) ? nonstd::make_optional(keypair)
-                                     : nonstd::nullopt;
-    };
+        | deserializeKeypairField(&iroha::keypair_t::pubkey,
+                                  client_pub_key_)
+        | deserializeKeypairField(&iroha::keypair_t::privkey,
+                                  client_priv_key_)
+        | [this](auto keypair) -> nonstd::optional<iroha::keypair_t> {
+          return this->validate(keypair) ? nonstd::make_optional(keypair)
+                                         : nonstd::nullopt;
+        };
   }
+
+  nonstd::optional<iroha::keypair_t> KeysManagerImpl::loadKeys() {
+    return loadKeys(account_name_ + ".pub", account_name_ + ".priv");
+  }
+
+  KeysManagerImpl::KeysManagerImpl() {}
 
   bool KeysManagerImpl::createKeys(std::string pass_phrase) {
     auto seed = iroha::create_seed(pass_phrase);

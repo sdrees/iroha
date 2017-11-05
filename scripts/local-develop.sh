@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#
+# This simple script starts redis and postgres docker containers,
+# and installs environment variables of the caller. Can be safely
+# executed as many times as needed (it performs autocleaning).
+#
+# Usage:
+# source local-develop.sh
+#
+
 function dependency(){
 	(command -v $1 > /dev/null || (echo "install $1" && exit 1))
 }

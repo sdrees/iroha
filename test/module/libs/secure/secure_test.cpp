@@ -23,25 +23,43 @@
 
 using namespace iroha;
 
+/**
+ * @given initialized string
+ * @when erasing string with secure::erase
+ * @then string is guaranteed to be filled with 0s
+ */
 TEST(SecureUtil, Erase) {
+  // given
   std::string s = "hello world";
+
+  // when
   secure::erase((void *)s.data(), s.size());
 
+  // then
   for (char i : s) {
     ASSERT_EQ(i, 0);
   }
 }
 
+/**
+ * @given initialized string of size N, another string with preallocated N
+ * symbols
+ * @when use secure::move
+ * @then source string is filled with zeroes, destination string is filled with
+ * data
+ */
 TEST(SecureUtil, Move) {
+  // given
   std::string expected = "hello world";
-
   // source string
   std::string s = expected;
   // destination container
   std::string d(s.size(), 'a' /* old content is not 0 */);
 
+  // when
   secure::move((void *)d.data(), (void *)s.data(), s.size());
 
+  // then
   for (char i : s) {
     ASSERT_EQ(i, 0);
   }
@@ -54,19 +72,19 @@ TEST(SecureUtil, Move) {
   ASSERT_EQ(d.size(), expected.size());
 }
 
+/**
+ * @given two equal strings
+ * @when use secure::compare
+ * @then strings are equal
+ */
 TEST(SecureUtil, Compare) {
+  // given
   std::string s = "hello world";
   std::string d = s;
 
-  ASSERT_TRUE(secure::compare((void *)s.data(), (void *)d.data(), s.size()));
-}
+  // when
+  bool result = secure::compare((void *)s.data(), (void *)d.data(), s.size());
 
-TEST(PRNG, SingleValue) {
-  secure::PRNG<std::uniform_int_distribution<uint8_t> > prng{};
-
-  for (int i = 0; i < 1024; i++) {
-    auto n = prng.get();
-    ASSERT_GE(n, 0);
-    ASSERT_LE(n, 255);
-  }
+  // then
+  ASSERT_TRUE(result);
 }

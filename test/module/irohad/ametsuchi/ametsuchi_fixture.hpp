@@ -22,14 +22,13 @@
 #include <boost/filesystem.hpp>
 #include <cpp_redis/cpp_redis>
 #include <pqxx/pqxx>
-
+#include "ametsuchi/config.hpp"
+#include "cli/env-vars.hpp"
 #include "common/files.hpp"
 #include "logger/logger.hpp"
-#include "main/cli/config.hpp"
-#include "main/cli/env-vars.hpp"
 #include "util/string.hpp"
 
-using namespace std::literals::string_literals;
+using std::literals::string_literals::operator""s;
 using iroha::string::parse_env;
 
 #define LOCALHOST "127.0.0.1"s
@@ -42,32 +41,31 @@ namespace iroha {
      */
     class AmetsuchiTest : public ::testing::Test {
      public:
-      iroha::config::Redis redis;
-      iroha::config::Postgres postgres;
-      iroha::config::BlockStorage storage;
+      iroha::ametsuchi::config::Ametsuchi config;
 
-     protected:
-      virtual void SetUp() {
+      AmetsuchiTest(){
         auto log = logger::testLog("AmetsuchiTest");
 
-        redis.host = parse_env(IROHA_RDHOST, LOCALHOST);
-        redis.port = parse_env(IROHA_RDPORT, 6379);
+        config.redis.host = parse_env(IROHA_RDHOST, LOCALHOST);
+        config.redis.port = parse_env(IROHA_RDPORT, 6379);
 
-        postgres.host = parse_env(IROHA_PGHOST, LOCALHOST);
-        postgres.port = parse_env(IROHA_PGPORT, 5432);
-        postgres.database = parse_env(IROHA_PGDATABASE, "postgres"s);
-        postgres.username = parse_env(IROHA_PGUSER, "postgres"s);
-        postgres.password = parse_env(IROHA_PGPASSWORD, "mysecretpassword"s);
+        config.postgres.host = parse_env(IROHA_PGHOST, LOCALHOST);
+        config.postgres.port = parse_env(IROHA_PGPORT, 5432);
+        config.postgres.database = parse_env(IROHA_PGDATABASE, "postgres"s);
+        config.postgres.username = parse_env(IROHA_PGUSER, "postgres"s);
+        config.postgres.password =
+            parse_env(IROHA_PGPASSWORD, "mysecretpassword"s);
 
-        storage.path = parse_env(IROHA_BLOCKSPATH, "/tmp/blocks"s);
+        config.blockStorage.path = parse_env(IROHA_BLOCKSPATH, "/tmp/blocks"s);
 
         // throws basic_filesystem_error<std::string> if fails for any reason
         // other than because the directory already exists.
         // returns true, if directory is created, false otherwise, including
         // case when directory existed.
-        boost::filesystem::create_directory(storage.path);
+        boost::filesystem::create_directory(config.blockStorage.path);
       }
 
+     protected:
       virtual void TearDown() {
         const auto drop = R"(
 DROP TABLE IF EXISTS account_has_signatory;
@@ -83,19 +81,19 @@ DROP TABLE IF EXISTS peer;
 DROP TABLE IF EXISTS role;
 )";
 
-        pqxx::connection connection(this->postgres.options());
+        pqxx::connection connection(config.postgres.options());
         pqxx::work txn(connection);
         txn.exec(drop);
         txn.commit();
         connection.disconnect();
 
         cpp_redis::redis_client client;
-        client.connect(this->redis.host, this->redis.port);
+        client.connect(config.redis.host, config.redis.port);
         client.flushall();
         client.sync_commit();
         client.disconnect();
 
-        iroha::remove_all(this->storage.path);
+        iroha::remove_all(config.blockStorage.path);
       }
     };
   }  // namespace ametsuchi

@@ -16,29 +16,23 @@
  */
 
 #include "ametsuchi/impl/storage_impl.hpp"
-
 #include "ametsuchi/impl/mutable_storage_impl.hpp"
 #include "ametsuchi/impl/postgres_wsv_query.hpp"
 #include "ametsuchi/impl/redis_block_query.hpp"
 #include "ametsuchi/impl/temporary_wsv_impl.hpp"
+#include "cli/common.hpp"
 #include "model/converters/json_common.hpp"
-
-#include "main/cli/config.hpp"
 
 namespace iroha {
   namespace ametsuchi {
 
     StorageImpl::StorageImpl(
-        const config::Postgres &pg,
-        const config::Redis &rd,
-        const config::BlockStorage &bs,
+        const config::Ametsuchi &am,
         std::unique_ptr<FlatFile> block_store,
         std::unique_ptr<cpp_redis::redis_client> index,
         std::unique_ptr<pqxx::lazyconnection> wsv_connection,
         std::unique_ptr<pqxx::nontransaction> wsv_transaction)
-        : pg_(pg),
-          rd_(rd),
-          bs_(bs),
+        : config(am),
           block_store_(std::move(block_store)),
           index_(std::move(index)),
           wsv_connection_(std::move(wsv_connection)),
@@ -52,6 +46,7 @@ namespace iroha {
           "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;");
     }
 
+    // TODO(@warchant): change method signature to use boost::optional
     std::unique_ptr<TemporaryWsv> StorageImpl::createTemporaryWsv() {
       auto command_executors = model::CommandExecutorFactory::create();
       if (not command_executors.has_value()) {
@@ -60,7 +55,7 @@ namespace iroha {
       }
 
       auto postgres_connection =
-          std::make_unique<pqxx::lazyconnection>(pg_.options());
+          std::make_unique<pqxx::lazyconnection>(config.postgres.options());
       try {
         postgres_connection->activate();
       } catch (const pqxx::broken_connection &e) {
@@ -76,6 +71,7 @@ namespace iroha {
           std::move(command_executors.value()));
     }
 
+    // TODO(@warchant): change method signature to use boost::optional
     std::unique_ptr<MutableStorage> StorageImpl::createMutableStorage() {
       auto command_executors = model::CommandExecutorFactory::create();
       if (not command_executors.has_value()) {
@@ -84,13 +80,13 @@ namespace iroha {
       }
 
       auto postgres_connection =
-          std::make_unique<pqxx::lazyconnection>(pg_.options());
+          std::make_unique<pqxx::lazyconnection>(config.postgres.options());
       try {
         postgres_connection->activate();
       } catch (const pqxx::broken_connection &e) {
         log_->error("Can't connect to PostgreSQL on {}:{}, reason: {}",
-                    pg_.host,
-                    pg_.port,
+                    config.postgres.host,
+                    config.postgres.port,
                     e.what());
         return nullptr;
       }
@@ -99,7 +95,7 @@ namespace iroha {
 
       auto index = std::make_unique<cpp_redis::redis_client>();
       try {
-        index->connect(rd_.host, rd_.port);
+        index->connect(config.redis.host, config.redis.port);
       } catch (const cpp_redis::redis_error &e) {
         log_->error("Connection to Redis broken: {}", e.what());
         return nullptr;
@@ -151,7 +147,7 @@ DROP TABLE IF EXISTS role;
 
       // erase db
       log_->info("drop database");
-      pqxx::connection connection(pg_.options());
+      pqxx::connection connection(config.postgres.options());
       pqxx::work txn(connection);
       txn.exec(drop);
       txn.commit();
@@ -163,7 +159,7 @@ DROP TABLE IF EXISTS role;
       // erase tx index
       log_->info("drop redis");
       cpp_redis::redis_client client;
-      client.connect(rd_.host, rd_.port);
+      client.connect(config.redis.host, config.redis.port);
       client.flushall();
       client.sync_commit();
 
@@ -173,30 +169,29 @@ DROP TABLE IF EXISTS role;
     }
 
     nonstd::optional<ConnectionContext> StorageImpl::initConnections(
-        const config::Postgres &pg,
-        const config::Redis &rd,
-        const config::BlockStorage &bs) {
+        const config::Ametsuchi &am) {
       auto log_ = logger::log("StorageImpl:initConnection");
       log_->info("Start storage creation");
 
-      auto block_store = FlatFile::create(bs.path);
-      if (!block_store) {
-        log_->error("Cannot create block store at {}", bs.path);
+      auto block_store = FlatFile::create(am.blockStorage.path);
+      if (not block_store) {
+        log_->error("Cannot create block store at {}", am.blockStorage.path);
         return nonstd::nullopt;
       }
       log_->info("block store created");
 
       auto index = std::make_unique<cpp_redis::redis_client>();
       try {
-        index->connect(rd.host, rd.port);
+        index->connect(am.redis.host, am.redis.port);
       } catch (const cpp_redis::redis_error &e) {
-        log_->error("Can not connect to redis on {}:{}", rd.host, rd.port);
+        log_->error(
+            "Can not connect to redis on {}:{}", am.redis.host, am.redis.port);
         return nonstd::nullopt;
       }
       log_->info("connection to Redis completed");
 
       auto postgres_connection =
-          std::make_unique<pqxx::lazyconnection>(pg.options());
+          std::make_unique<pqxx::lazyconnection>(am.postgres.options());
       try {
         postgres_connection->activate();
       } catch (const pqxx::broken_connection &e) {
@@ -217,18 +212,14 @@ DROP TABLE IF EXISTS role;
     }
 
     std::shared_ptr<StorageImpl> StorageImpl::create(
-        const config::Postgres &pg,
-        const config::Redis &rd,
-        const config::BlockStorage &bs) {
-      auto ctx = initConnections(pg, rd, bs);
+        const config::Ametsuchi &am) {
+      auto ctx = initConnections(am);
       if (not ctx.has_value()) {
         return nullptr;
       }
 
       return std::shared_ptr<StorageImpl>(
-          new StorageImpl(pg,
-                          rd,
-                          bs,
+          new StorageImpl(am,
                           std::move(ctx->block_store),
                           std::move(ctx->index),
                           std::move(ctx->pg_lazy),

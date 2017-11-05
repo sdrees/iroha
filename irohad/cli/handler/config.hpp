@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_MAIN_CLI_CONFIG_INIT_HPP_
-#define IROHA_MAIN_CLI_CONFIG_INIT_HPP_
+#ifndef IROHA_CLI_HANDLER_CONFIG_INIT_HPP_
+#define IROHA_CLI_HANDLER_CONFIG_INIT_HPP_
 
-#include <iostream>
-#include <sstream>
-#include "main/cli/config.hpp"
-#include "main/cli/env-vars.hpp"
+#include "ametsuchi/config.hpp"
+#include "cli/common.hpp"
+#include "torii/config.hpp"
 
 namespace iroha {
   namespace cli {
@@ -29,6 +28,12 @@ namespace iroha {
       namespace config {
 
         namespace util {
+
+          /**
+           * Performs preformatting from given key, value to environment
+           * variable format:
+           * export KEY=value
+           */
           template <typename T>
           std::string make_env_str(const std::string &key, T value) {
             std::stringstream ss;
@@ -37,25 +42,31 @@ namespace iroha {
           }
         }
 
-        void init(iroha::config::Postgres *pg,
-                  iroha::config::Redis *rd,
-                  iroha::config::BlockStorage *bs,
-                  iroha::config::OtherOptions *other,
-                  iroha::config::Cryptography *crypto,
-                  iroha::config::Torii *torii) {
+        /**
+         * Usage:
+         * irohad --flag1=a config > env.sh
+         * source env.sh
+         *
+         * Now config is applied.
+         */
+        inline void config(const iroha::ametsuchi::config::Ametsuchi *am,
+                           const iroha::config::OtherOptions *other,
+                           const iroha::config::Cryptography *crypto,
+                           const iroha::torii::config::Torii *torii) {
           using util::make_env_str;
           std::stringstream ss;
+
           ss  // postgres
-              << make_env_str(IROHA_PGHOST, pg->host) << '\n'
-              << make_env_str(IROHA_PGPORT, pg->port) << '\n'
-              << make_env_str(IROHA_PGDATABASE, pg->database) << '\n'
-              << make_env_str(IROHA_PGUSER, pg->username) << '\n'
-              << make_env_str(IROHA_PGPASSWORD, pg->password) << '\n'
+              << make_env_str(IROHA_PGHOST, am->postgres.host) << '\n'
+              << make_env_str(IROHA_PGPORT, am->postgres.port) << '\n'
+              << make_env_str(IROHA_PGDATABASE, am->postgres.database) << '\n'
+              << make_env_str(IROHA_PGUSER, am->postgres.username) << '\n'
+              << make_env_str(IROHA_PGPASSWORD, am->postgres.password) << '\n'
               // redis
-              << make_env_str(IROHA_RDHOST, rd->host) << '\n'
-              << make_env_str(IROHA_RDPORT, rd->port) << '\n'
+              << make_env_str(IROHA_RDHOST, am->redis.host) << '\n'
+              << make_env_str(IROHA_RDPORT, am->redis.port) << '\n'
               // block storage
-              << make_env_str(IROHA_BLOCKSPATH, bs->path) << '\n'
+              << make_env_str(IROHA_BLOCKSPATH, am->blockStorage.path) << '\n'
               // other options
               << make_env_str(IROHA_OTHER_LOADDELAY, other->load_delay.count())
               << '\n'
@@ -75,10 +86,11 @@ namespace iroha {
               << make_env_str(IROHA_TORII_PORT, torii->port) << '\n';
 
           std::cout << ss.str();
+          std::exit(EXIT_SUCCESS);
         }
       }
     }
   }
 }
 
-#endif  //  IROHA_MAIN_CLI_CONFIG_INIT_HPP_
+#endif  //  IROHA_CLI_HANDLER_CONFIG_INIT_HPP_

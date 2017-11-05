@@ -19,14 +19,16 @@
 #define IROHA_FLAGS_HPP_
 
 #include <CLI/CLI.hpp>
-#include "config.hpp"
-#include "main/cli/env-vars.hpp"
+#include "ametsuchi/config.hpp"
+#include "common.hpp"
+#include "env-vars.hpp"
+#include "torii/config.hpp"
 #include "util/network.hpp"
 
 using std::literals::string_literals::operator""s;
 
 inline void addPeerFlags(CLI::App *p,
-                         iroha::config::Torii *torii,
+                         iroha::torii::config::Torii *torii,
                          iroha::config::Cryptography *crypto) {
   p->add_option("--host"s,                      /* option's name */
                 torii->host,                    /* bind to this variable */
@@ -56,7 +58,8 @@ inline void addPeerFlags(CLI::App *p,
       ->check(CLI::ExistingFile);
 }
 
-inline void addPostgresFlags(CLI::App *p, iroha::config::Postgres *postgres) {
+inline void addPostgresFlags(CLI::App *p,
+                             iroha::ametsuchi::config::Postgres *postgres) {
   p->add_option(
        "--pghost"s, postgres->host, "PostgreSQL database host. "s, true)
       ->envname(IROHA_PGHOST)
@@ -85,7 +88,7 @@ inline void addPostgresFlags(CLI::App *p, iroha::config::Postgres *postgres) {
       ->group("PostgreSQL"s);
 }
 
-inline void addRedisFlags(CLI::App *p, iroha::config::Redis *redis) {
+inline void addRedisFlags(CLI::App *p, iroha::ametsuchi::config::Redis *redis) {
   p->add_option("--rdhost"s, redis->host, "Redis database host"s, true)
       ->envname(IROHA_RDHOST)
       ->group("Redis"s)
@@ -97,32 +100,29 @@ inline void addRedisFlags(CLI::App *p, iroha::config::Redis *redis) {
       ->group("Redis"s);
 }
 
-inline void addBlockStorageFlags(CLI::App *p,
-                                 iroha::config::BlockStorage *storage) {
+inline void addBlockStorageFlags(
+    CLI::App *p, iroha::ametsuchi::config::BlockStorage *storage) {
   p->add_option("--blockspath"s,
                 storage->path,
                 "Path to the folder, where blocks are saved",
                 true)
-      ->required()
       ->envname(IROHA_BLOCKSPATH)
       ->group("Block Storage");
 }
 
 inline void addCreateLedgerFlags(CLI::App *p,
-                                 std::function<void(std::string)> callback) {
-  std::string genesis{};
-  p->add_option("--genesis-block", genesis, "Path to the genesis block"s)
+                                 std::string& genesis) {
+  p->add_option("genesis-block", genesis, "Path to the genesis block"s)
       ->required()
       ->check(CLI::ExistingFile);
-  p->set_callback([&genesis, &callback]() { callback(genesis); });
 }
 
 inline void addOtherOptionsFlags(CLI::App *p,
                                  iroha::config::OtherOptions *options) {
   // copy default values, otherwise they will be equal to 0
-  size_t load_d = static_cast<size_t>(options->load_delay.count());
-  size_t vote_d = static_cast<size_t>(options->vote_delay.count());
-  size_t proposal_d = static_cast<size_t>(options->proposal_delay.count());
+  auto load_d = static_cast<size_t>(options->load_delay.count());
+  auto vote_d = static_cast<size_t>(options->vote_delay.count());
+  auto proposal_d = static_cast<size_t>(options->proposal_delay.count());
 
   p->add_option(
        "--load-delay",

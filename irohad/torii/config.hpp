@@ -15,27 +15,21 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_
-#define IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_
+#ifndef IROHA_TORII_CONFIG_HPP_
+#define IROHA_TORII_CONFIG_HPP_
 
-#include "ametsuchi/impl/storage_impl.hpp"
-#include "main/cli/config.hpp"
+#include "cli/common.hpp"
 
 namespace iroha {
-  namespace cli {
-    namespace handler {
-      namespace ledger {
-
-        void clear(config::Postgres *pg,
-                   config::Redis *rd,
-                   config::BlockStorage *bs) {
-          auto storage = ametsuchi::StorageImpl::create(*pg, *rd, *bs);
-          storage->drop();
-        }
-
-      }
+  namespace torii {
+    namespace config {
+      /**
+       * @struct Config::Torii
+       * @brief Config for torii gateway.
+       */
+      class Torii : public iroha::config::Service {};
     }
   }
 }
 
-#endif  //  IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_
+#endif  //  IROHA_TORII_CONFIG_HPP_

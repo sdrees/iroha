@@ -18,9 +18,9 @@
 #ifndef IROHA_HANDLERS_ALL_HPP_
 #define IROHA_HANDLERS_ALL_HPP_
 
-#include "main/cli/handler/start.hpp"
-#include "main/cli/handler/ledger/create.hpp"
-#include "main/cli/handler/ledger/clear.hpp"
-#include "main/cli/handler/config/init.hpp"
+#include "cli/handler/start.hpp"
+#include "cli/handler/ledger/create.hpp"
+#include "cli/handler/ledger/clear.hpp"
+#include "config.hpp"
 
 #endif //  IROHA_HANDLERS_ALL_HPP_

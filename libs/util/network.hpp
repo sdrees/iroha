@@ -30,7 +30,7 @@ namespace iroha {
      * @return true if 2^16 > port > 0, false otherwise.
      */
     constexpr inline bool is_port_valid(uint64_t port) {
-      return port > 0 && port < 65536 /* 1 << 16 */;
+      return 0 < port and port < 65536 /* 1 << 16 */;
     }
 
     /**
@@ -41,7 +41,7 @@ namespace iroha {
      * @return true if given string looks like a domain name or ip.
      */
     inline bool is_host_valid(const std::string &host) {
-      return !host.empty() && host.size() <= 253 /* max size is 253 for domains */;
+      return !host.empty() and host.size() <= 253 /* max size is 253 for domains */;
     }
 
   } //   namespace network

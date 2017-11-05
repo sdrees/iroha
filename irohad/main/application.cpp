@@ -32,6 +32,7 @@ using namespace iroha::synchronizer;
 using namespace iroha::torii;
 using namespace iroha::model::converters;
 using namespace iroha::consensus::yac;
+using namespace iroha::config;
 
 Application::Application() : log_(logger::log("application")) {}
 
@@ -47,10 +48,8 @@ Application::~Application() {
   }
 }
 
-void Application::initStorage(const Postgres &pg,
-                              const Redis &rd,
-                              const BlockStorage &bs) {
-  storage = StorageImpl::create(pg, rd, bs);
+void Application::initStorage(const iroha::ametsuchi::config::Ametsuchi &am) {
+  storage = StorageImpl::create(am);
 
   // TODO (@warchant): if the storage is nullptr, then we do not have conenction
   // to redis OR postgres. Handle this.
@@ -79,9 +78,7 @@ void Application::initPeerQuery() {
   log_->info("[Init] => peer query");
 }
 
-void Application::initCryptoProvider(const Cryptography &crypto) {
-  // TODO(@warchant): parse crypto for keypair
-
+void Application::initCryptoProvider(const iroha::keypair_t &keypair) {
   crypto_verifier = std::make_shared<ModelCryptoProviderImpl>(keypair);
 
   POSTCONDITION_TRUE(crypto_verifier);
@@ -147,8 +144,10 @@ void Application::initBlockLoader() {
   log_->info("[Init] => block loader");
 }
 
-void Application::initConsensusGate(const Torii &torii,
-                                    const OtherOptions &other) {
+void Application::initConsensusGate(const iroha::torii::config::Torii &torii,
+                                    const std::chrono::milliseconds &vote_delay,
+                                    const std::chrono::milliseconds &load_delay,
+                                    const iroha::keypair_t &keypair) {
   PRECONDITION_TRUE(wsv);
   PRECONDITION_TRUE(simulator);
   PRECONDITION_TRUE(block_loader);
@@ -158,8 +157,8 @@ void Application::initConsensusGate(const Torii &torii,
                                               simulator,
                                               block_loader,
                                               keypair,
-                                              other.vote_delay,
-                                              other.load_delay);
+                                              vote_delay,
+                                              load_delay);
 
   POSTCONDITION_TRUE(consensus_gate);
 
@@ -208,8 +207,8 @@ void Application::initTransactionCommandService() {
 
   POSTCONDITION_TRUE(tx_processor);
 
-  command_service =
-      std::make_unique<::torii::CommandService>(pb_tx_factory, tx_processor);
+  command_service = std::make_unique<::torii::CommandService>(
+      pb_tx_factory, tx_processor, storage);
   POSTCONDITION_TRUE(command_service);
 
   log_->info("[Init] => command service");
@@ -239,7 +238,7 @@ void Application::initQueryService() {
   log_->info("[Init] => query service");
 }
 
-void Application::run(const Torii &torii) {
+void Application::run(const iroha::torii::config::Torii &torii) {
   torii_server = std::make_unique<ServerRunner>(torii.listenAddress());
   POSTCONDITION_TRUE(torii_server);
 

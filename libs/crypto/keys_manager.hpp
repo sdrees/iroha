@@ -32,6 +32,7 @@ namespace iroha {
      * @param account_name
      * @return nullopt if no keypair found locally, or verification failure
      */
+    virtual nonstd::optional<iroha::keypair_t> loadKeys(std::string pubpath, std::string privpath) = 0;
     virtual nonstd::optional<iroha::keypair_t> loadKeys() = 0;
 
     /**

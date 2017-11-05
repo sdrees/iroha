@@ -26,8 +26,10 @@ namespace iroha {
   class KeysManagerImpl : public KeysManager {
    public:
     explicit KeysManagerImpl(std::string account_name);
+    KeysManagerImpl();
 
     nonstd::optional<iroha::keypair_t> loadKeys() override;
+    nonstd::optional<iroha::keypair_t> loadKeys(std::string pubpath, std::string privpath) override;
 
     bool createKeys(std::string pass_phrase) override;
 

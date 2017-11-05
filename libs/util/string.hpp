@@ -35,27 +35,26 @@ namespace iroha {
     }
 
     /**
-     * Parse arbitrary typeT: string, int, long, double... from
+     * Parse arbitrary type T: string, int, long, double... from
      * string-encoded format to T.
      *
      * @example T=double, s=std::string("1.337"), result will be 1.337
-     * @tparam T
-     * @throws std::exception if string can not be parsed.
+     * @tparam T return type
      * @param s any string
-     * @return
+     * @return boost::none if T can not be parsed from string, parsed value of
+     * type T otherwise
      */
     template <typename T>
-    boost::optional<T> from_string(const char* s) {
-      if(!s) {
+    boost::optional<T> from_string(const char *s) {
+      if (not s) {
         return boost::none;
       }
 
       std::stringstream ss(s);
       ss.exceptions();  // disable exceptions
       T result;
-      // ss.eof() rejects this case
-      // from_string<int>("123a") => 123 - incorrect, should be none
-      if (ss >> result && ss.eof()) {
+
+      if (ss >> result and ss.eof()) {
         return result;
       } else {
         return boost::none;

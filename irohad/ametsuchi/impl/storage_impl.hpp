@@ -26,8 +26,8 @@
 #include "ametsuchi/impl/flat_file/flat_file.hpp"
 #include "ametsuchi/storage.hpp"
 #include "logger/logger.hpp"
-#include "main/cli/config.hpp"
 #include "model/converters/json_block_factory.hpp"
+#include "ametsuchi/config.hpp"
 
 namespace iroha {
   namespace ametsuchi {
@@ -51,15 +51,11 @@ namespace iroha {
     class StorageImpl : public Storage {
      protected:
       static nonstd::optional<ConnectionContext> initConnections(
-          const config::Postgres &pg,
-          const config::Redis &rd,
-          const config::BlockStorage &bs);
+          const config::Ametsuchi &am);
 
      public:
       static std::shared_ptr<StorageImpl> create(
-          const config::Postgres &pg,
-          const config::Redis &rd,
-          const config::BlockStorage &bs);
+          const config::Ametsuchi &am);
 
       std::unique_ptr<TemporaryWsv> createTemporaryWsv() override;
 
@@ -76,17 +72,13 @@ namespace iroha {
       std::shared_ptr<BlockQuery> getBlockQuery() const override;
 
      protected:
-      StorageImpl(const config::Postgres &pg,
-                  const config::Redis &rd,
-                  const config::BlockStorage &bs,
+      StorageImpl(const config::Ametsuchi &am,
                   std::unique_ptr<FlatFile> block_store,
                   std::unique_ptr<cpp_redis::redis_client> index,
                   std::unique_ptr<pqxx::lazyconnection> wsv_connection,
                   std::unique_ptr<pqxx::nontransaction> wsv_transaction);
 
-      const config::Postgres pg_;
-      const config::Redis rd_;
-      const config::BlockStorage bs_;
+      const config::Ametsuchi config;
 
      private:
       std::unique_ptr<FlatFile> block_store_;

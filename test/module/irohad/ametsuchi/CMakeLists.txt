@@ -16,6 +16,7 @@ addtest(flat_file_test flat_file_test.cpp)
 target_link_libraries(flat_file_test
     ametsuchi
     libs_common
+    ${Boost_LIBRARIES}
     )
 
 add_library(ametsuchi_fixture INTERFACE)

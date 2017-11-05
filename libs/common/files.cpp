@@ -25,6 +25,7 @@ void iroha::remove_all(const std::string &dump_dir) {
   if (!dump_dir.empty()) {
     // Directory iterator:
     struct dirent **namelist;
+    // TODO(@warchant): change POSIX call to boost::filesystem call
     auto status = scandir(dump_dir.c_str(), &namelist, nullptr, alphasort);
     if (status < 0) {
       log->error("Internal error on scanning folder {}", dump_dir);

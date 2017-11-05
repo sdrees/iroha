@@ -40,6 +40,7 @@ namespace iroha {
         std::shared_ptr<ametsuchi::PeerQuery> wsv,
         size_t max_size,
         std::chrono::milliseconds delay_milliseconds) {
+      // TODO(@warchant): what if get ledger peers returns nullopt or array with 0 items?
       auto network_address = wsv->getLedgerPeers().value().front().address;
       ordering_gate_transport =
           std::make_shared<iroha::ordering::OrderingGateTransportGrpc>(

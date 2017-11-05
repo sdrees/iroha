@@ -19,8 +19,8 @@
 #include <gtest/gtest.h>
 #include "common/files.hpp"
 #include "common/types.hpp"
-
 #include "logger/logger.hpp"
+#include <boost/filesystem.hpp>
 
 using namespace iroha::ametsuchi;
 
@@ -29,12 +29,14 @@ static logger::Logger log_ = logger::testLog("BlockStore");
 class BlStore_Test : public ::testing::Test {
  protected:
   void SetUp() override {
-    mkdir(block_store_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    boost::filesystem::create_directory(block_store_path);
   }
+
   void TearDown() override {
     iroha::remove_all(block_store_path);
     rmdir(block_store_path.c_str());
   }
+
   std::string block_store_path = "/tmp/dump";
 };
 
@@ -60,8 +62,9 @@ TEST_F(BlStore_Test, BlockStoreWhenRemoveBlock) {
   log_->info("----------| Simulate removal of the block |----------");
   // Remove file in the middle of the block store
   {
-    log_->info("----------| create blockstore and insert 3 elements "
-                   "|----------");
+    log_->info(
+        "----------| create blockstore and insert 3 elements "
+        "|----------");
 
     auto bl_store = FlatFile::create(block_store_path);
     ASSERT_TRUE(bl_store);
@@ -86,8 +89,9 @@ TEST_F(BlStore_Test, BlockStoreWhenRemoveBlock) {
 }
 
 TEST_F(BlStore_Test, BlockStoreWhenAbsentFolder) {
-  log_->info("----------| Check that folder absent => create => "
-                 "make storage => remove storage |----------");
+  log_->info(
+      "----------| Check that folder absent => create => "
+      "make storage => remove storage |----------");
   std::string target_path = "/tmp/bump";
   rmdir(target_path.c_str());
   {
@@ -107,7 +111,7 @@ TEST_F(BlStore_Test, BlockStoreWhenAbsentFolder) {
  * @when new block storage is initialized
  * @then new block storage has all blocks from the folder
  */
-TEST_F(BlStore_Test, BlockStoreInitializationFromNonemptyFolder){
+TEST_F(BlStore_Test, BlockStoreInitializationFromNonemptyFolder) {
   auto bl_store1 = FlatFile::create(block_store_path);
   ASSERT_TRUE(bl_store1);
 

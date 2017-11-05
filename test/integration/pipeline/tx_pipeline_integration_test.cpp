@@ -18,22 +18,24 @@
 #include <boost/filesystem.hpp>
 #include <cstdio>
 #include <cstring>
-
+#include "ametsuchi/config.hpp"
+#include "cli/env-vars.hpp"
 #include "crypto/hash.hpp"
 #include "crypto/keys_manager_impl.hpp"
 #include "datetime/time.hpp"
 #include "framework/test_subscriber.hpp"
 #include "main/application.hpp"
-#include "main/cli/config.hpp"
-#include "main/cli/env-vars.hpp"
 #include "main/raw_block_insertion.hpp"
 #include "model/generators/block_generator.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_fixture.hpp"
+#include "torii/config.hpp"
 #include "util/string.hpp"
 
 using iroha::string::parse_env;
 using namespace framework::test_subscriber;
 using namespace std::chrono_literals;
+using ToriiConfig = iroha::torii::config::Torii;
+using AmetsuchiConfig = iroha::ametsuchi::config::Ametsuchi;
 
 class TestIrohad : public Application {
  public:
@@ -43,7 +45,7 @@ class TestIrohad : public Application {
 
   auto &getCryptoProvider() { return crypto_verifier; }
 
-  void run(const iroha::config::Torii &torii) override {
+  void run(const ToriiConfig &torii) override {
     grpc::ServerBuilder builder;
     int port = 0;
     builder.AddListeningPort(
@@ -64,22 +66,25 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
  public:
   TxPipelineIntegrationTest() {
     // spdlog::set_level(spdlog::level::off);
-
     torii.host = parse_env(IROHA_TORII_HOST, LOCALHOST);
     torii.port = parse_env(IROHA_TORII_PORT, 50051);
 
-    other.load_delay = parse_env(IROHA_OTHER_LOADDELAY, 5000);
-    other.vote_delay = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
-    other.proposal_delay = parse_env(IROHA_OTHER_PROPOSALDELAY, 5000);
+    auto load_d = parse_env(IROHA_OTHER_LOADDELAY, 5000);
+    auto vote_d = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
+    auto proposal_d = parse_env(IROHA_OTHER_PROPOSALDELAY, 5000);
+
+    other.load_delay = std::chrono::milliseconds(load_d);
+    other.vote_delay = std::chrono::milliseconds(vote_d);
+    other.proposal_delay = std::chrono::milliseconds(proposal_d);
     other.max_proposal_size = parse_env(IROHA_OTHER_PROPOSALSIZE, 10);
   }
 
-  config::Torii torii{};
+  ToriiConfig torii{};
   config::OtherOptions other{};
   config::Cryptography crypto{};
 
   void SetUp() override {
-    iroha::ametsuchi::AmetsuchiTest::SetUp();
+    irohad = std::make_shared<TestIrohad>();
 
     genesis_block =
         iroha::model::generators::BlockGenerator().generateGenesisBlock(
@@ -87,26 +92,28 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
     manager = std::make_shared<iroha::KeysManagerImpl>("node0");
     auto keypair = manager->loadKeys().value();
 
-    ASSERT_TRUE(irohad->storage);
+    irohad->initStorage(this->config);
 
+    // NOTE: genesis block should be inserted after initStorage but before initConsensusGate
     // insert genesis block
     iroha::main::BlockInserter inserter(irohad->storage);
-
     inserter.applyToLedger({genesis_block});
 
-    irohad->initStorage(postgres, redis, storage);
     irohad->initProtoFactories();
     irohad->initPeerQuery();
-    irohad->initCryptoProvider(crypto);
+    irohad->initCryptoProvider(keypair);
     irohad->initValidators();
     irohad->initOrderingGate(other);
     irohad->initSimulator();
     irohad->initBlockLoader();
-    irohad->initConsensusGate(torii, other);
+    irohad->initConsensusGate(
+        torii, other.vote_delay, other.load_delay, keypair);
     irohad->initSynchronizer();
     irohad->initPeerCommunicationService();
     irohad->initTransactionCommandService();
     irohad->initQueryService();
+
+    ASSERT_TRUE(irohad->storage);
 
     // start irohad
     irohad->run(torii);

@@ -16,19 +16,22 @@
  */
 
 #include <boost/filesystem.hpp>
-#include "main/cli/flags.hpp"
-#include "main/cli/handler/all.hpp"
+#include "ametsuchi/config.hpp"
+#include "cli/defaults.hpp"
+#include "cli/flags.hpp"
+#include "cli/handler/all.hpp"
+#include "torii/config.hpp"
+#include "util/filesystem.hpp"
 
 using namespace iroha;
 using std::literals::string_literals::operator""s;   // std::string
 using std::literals::chrono_literals::operator""ms;  // milliseconds
 
-#define ALLHOST "0.0.0.0"s
-#define LOCALHOST "localhost"s
-
+// IROHA_VERSION should be defined at compile-time with -DIROHA_VERSION=abcd
 #ifdef IROHA_VERSION
 // it is a preprocessor trick, which converts X to "X" (const char*)
 // refer to https://stackoverflow.com/a/240370/1953079
+// example: https://ideone.com/F9g67M
 #define STRINGIFY2(X) #X
 #define STRINGIFY(X) STRINGIFY2(X)
 #define IROHA_VERSION_STR STRINGIFY(IROHA_VERSION)
@@ -39,50 +42,47 @@ using std::literals::chrono_literals::operator""ms;  // milliseconds
 int main(int argc, char *argv[]) {
   CLI::App main("iroha - simple decentralized ledger"s);
   main.require_subcommand(1);
+  main.add_config();
   main.add_flag("-v,--version"s,
-                [&argv, &main](size_t) {
-                  // note (@warchant): do not use logger here, it
-                  // looks ugly.
+                [&argv](size_t) {
                   std::cout << argv[0] << " version " IROHA_VERSION_STR "\n";
-                  exit(0);
+                  exit(EXIT_SUCCESS);
                 },
                 "Current version"s);
 
   /// DEFAULTS
-  config::Torii torii{};
-  torii.host = ALLHOST;
-  torii.port = 50051;
+  std::string genesis_path;
 
-  config::OtherOptions other{};
-  other.load_delay = 5000ms;
-  other.vote_delay = 5000ms;
-  other.proposal_delay = 5000ms;
-  other.max_proposal_size = 10;
+  iroha::ametsuchi::config::Ametsuchi ametsuchi{};
+  ametsuchi.postgres.host = defaults::postgresHost;
+  ametsuchi.postgres.port = defaults::postgresPort;
+  ametsuchi.redis.host = defaults::redisHost;
+  ametsuchi.redis.port = defaults::redisPort;
+  ametsuchi.blockStorage.path = defaults::blockStoragePath;
 
-  config::Redis redis{};
-  redis.host = LOCALHOST;
-  redis.port = 6379;
+  iroha::torii::config::Torii torii{};
+  torii.host = defaults::toriiHost;
+  torii.port = defaults::toriiPort;
 
-  config::Postgres postgres{};
-  postgres.host = LOCALHOST;
-  postgres.port = 5432;
+  iroha::config::Cryptography crypto{};
 
-  config::BlockStorage storage{};
-  storage.path = "blocks"s;
+  iroha::config::OtherOptions other{};
+  other.load_delay = defaults::loadDelay;
+  other.vote_delay = defaults::voteDelay;
+  other.proposal_delay = defaults::proposalDelay;
+  other.max_proposal_size = defaults::proposalSize;
 
-  config::Cryptography crypto{};
+  addPeerFlags(&main, &torii, &crypto);
+  addPostgresFlags(&main, &ametsuchi.postgres);
+  addRedisFlags(&main, &ametsuchi.redis);
+  addBlockStorageFlags(&main, &ametsuchi.blockStorage);
+  addOtherOptionsFlags(&main, &other);
 
   /// OPTIONS
   // start
-  auto start = main.add_subcommand("start"s, "Start peer"s);
-  addPeerFlags(start, &torii, &crypto);
-  addPostgresFlags(start, &postgres);
-  addRedisFlags(start, &redis);
-  addBlockStorageFlags(start, &storage);
-  addOtherOptionsFlags(start, &other);
-  start->set_callback([&]() {
-    cli::handler::start(&postgres, &redis, &storage, &other, &crypto, &torii);
-  });
+  auto start = main.add_subcommand("start"s, "Start iroha"s);
+  start->set_callback(
+      [&]() { cli::handler::start(&ametsuchi, &crypto, &other, &torii); });
 
   // ledger
   auto ledger =
@@ -91,38 +91,24 @@ int main(int argc, char *argv[]) {
   // ledger create
   auto ledger_create = ledger->add_subcommand(
       "create"s, "Create new network with given genesis block"s);
-  addPostgresFlags(ledger_create, &postgres);
-  addRedisFlags(ledger_create, &redis);
-  addBlockStorageFlags(ledger_create, &storage);
-  addCreateLedgerFlags(ledger_create, [&](std::string genesis_path) {
-    // at this point we can be sure that file exists, because CLI performs check
-    std::ifstream f(genesis_path);
-    std::stringstream buffer;
-    buffer << f.rdbuf();
-    f.close();
-
-    std::string genesis_content = buffer.str();
-
-    cli::handler::ledger::create(&postgres, &redis, &storage, genesis_content);
+  addCreateLedgerFlags(ledger_create, genesis_path);
+  ledger_create->set_callback([&]() {
+    cli::handler::ledger::create(&ametsuchi, genesis_path);
   });
 
   // ledger clear
   auto ledger_clear =
-      ledger->add_subcommand("clear"s, "Clear peer's ledger"s, false);
-  addPostgresFlags(ledger_clear, &postgres);
-  addRedisFlags(ledger_clear, &redis);
-  addBlockStorageFlags(ledger_clear, &storage);
+      ledger->add_subcommand("clear"s,
+                             "Clear peer's ledger"s,
+                             false /* disable help for this command */);
   ledger_clear->set_callback(
-      [&]() { cli::handler::ledger::clear(&postgres, &redis, &storage); });
+      [&]() { cli::handler::ledger::clear(&ametsuchi); });
 
   // config
-  auto config = main.add_subcommand("config"s, "Configuration management"s)
-                    ->require_subcommand(1);
-  auto config_show =
-      config->add_subcommand("show"s, "Show current config"s, false);
-  config_show->set_callback([&]() {
-    cli::handler::config::init(
-        &postgres, &redis, &storage, &other, &crypto, &torii);
+  auto config =
+      main.add_subcommand("config"s, "Dump current configuration"s, false);
+  config->set_callback([&]() {
+    cli::handler::config::config(&ametsuchi, &other, &crypto, &torii);
   });
 
   CLI11_PARSE(main, argc, argv);

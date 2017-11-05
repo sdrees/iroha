@@ -28,6 +28,7 @@
 #include <vector>
 
 #include <nonstd/optional.hpp>
+#include <boost/optional.hpp>
 
 /**
  * This file defines common types used in iroha.
@@ -112,6 +113,17 @@ namespace iroha {
     static blob_t<size_> from_string(const std::string &data) {
       if (data.size() != size_) {
         throw BadFormatException("blob_t: input string has incorrect length");
+      }
+
+      blob_t<size_> b;
+      std::copy(data.begin(), data.end(), b.begin());
+
+      return b;
+    }
+
+    static boost::optional<blob_t<size_>> from_hexstring(const std::string &data) {
+      if (data.size() != size_) {
+        return boost::none;
       }
 
       blob_t<size_> b;

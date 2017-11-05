@@ -15,30 +15,29 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_MAIN_CLI_LEDGER_CREATE_HPP_
-#define IROHA_MAIN_CLI_LEDGER_CREATE_HPP_
+#ifndef IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_
+#define IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_
 
-#include "main/cli/config.hpp"
+#include "ametsuchi/impl/storage_impl.hpp"
+#include "cli/common.hpp"
 
 namespace iroha {
   namespace cli {
     namespace handler {
       namespace ledger {
 
-        void create(
-            config::Postgres *pg,
-            config::Redis *rd,
-            config::BlockStorage *bs,
-            const std::string& genesis_content
-        ) {
-          // TODO: implement
-          // raw block inserter?
-          printf("genesis block content: \n%s", genesis_content.c_str());
+        inline void clear(ametsuchi::config::Ametsuchi *am) {
+          auto storage = ametsuchi::StorageImpl::create(*am);
+          auto log = logger::log("ledger clear");
+          if (storage) {
+            storage->drop();
+          } else {
+            log->error("there is no connection to storage");
+          }
         }
-
       }
     }
   }
 }
 
-#endif //  IROHA_MAIN_CLI_LEDGER_CREATE_HPP_
+#endif  //  IROHA_MAIN_CLI_LEDGER_CLEAR_HPP_

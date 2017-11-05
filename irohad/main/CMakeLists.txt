@@ -61,6 +61,7 @@ target_link_libraries(irohad
     application
     raw_block_insertion
     rapidjson
+    keys_manager
     ${Boost_LIBRARIES}
     )
 

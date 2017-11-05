@@ -18,11 +18,12 @@
 #ifndef IROHA_APPLICATION_HPP
 #define IROHA_APPLICATION_HPP
 
+#include "ametsuchi/config.hpp"
 #include "ametsuchi/impl/peer_query_wsv.hpp"
 #include "ametsuchi/impl/storage_impl.hpp"
+#include "cli/common.hpp"
 #include "crypto/crypto.hpp"
 #include "logger/logger.hpp"
-#include "main/cli/config.hpp"
 #include "main/impl/block_loader_init.hpp"
 #include "main/impl/consensus_init.hpp"
 #include "main/impl/ordering_init.hpp"
@@ -38,6 +39,7 @@
 #include "synchronizer/impl/synchronizer_impl.hpp"
 #include "synchronizer/synchronizer.hpp"
 #include "torii/command_service.hpp"
+#include "torii/config.hpp"
 #include "torii/processor/query_processor_impl.hpp"
 #include "torii/processor/transaction_processor_impl.hpp"
 #include "validation/chain_validator.hpp"
@@ -46,13 +48,6 @@
 #include "validation/impl/stateless_validator_impl.hpp"
 #include "validation/stateful_validator.hpp"
 
-using iroha::config::Postgres;
-using iroha::config::Redis;
-using iroha::config::BlockStorage;
-using iroha::config::OtherOptions;
-using iroha::config::Cryptography;
-using iroha::config::Torii;
-
 class Application {
  public:
   Application();
@@ -60,30 +55,31 @@ class Application {
   /**
    * Run worker threads for start performing
    */
-  virtual void run(const Torii &);
+  virtual void run(const iroha::torii::config::Torii &);
 
   virtual ~Application();
 
   // -----------------------| component initialization |------------------------
 
-  virtual void initStorage(const Postgres &,
-                           const Redis &,
-                           const BlockStorage &);
+  virtual void initStorage(const iroha::ametsuchi::config::Ametsuchi &am);
   virtual void initProtoFactories();
 
   virtual void initPeerQuery();
 
-  virtual void initCryptoProvider(const Cryptography &);
+  virtual void initCryptoProvider(const iroha::keypair_t &);
 
   virtual void initValidators();
 
-  virtual void initOrderingGate(const OtherOptions &other);
+  virtual void initOrderingGate(const iroha::config::OtherOptions &);
 
   virtual void initSimulator();
 
   virtual void initBlockLoader();
 
-  virtual void initConsensusGate(const Torii &, const OtherOptions &);
+  virtual void initConsensusGate(const iroha::torii::config::Torii &,
+                                 const std::chrono::milliseconds &vote_delay,
+                                 const std::chrono::milliseconds &load_delay,
+                                 const iroha::keypair_t &);
 
   virtual void initSynchronizer();
 
@@ -149,7 +145,6 @@ class Application {
 
  public:
   std::shared_ptr<iroha::ametsuchi::Storage> storage;
-  iroha::keypair_t keypair;
 };
 
 #endif  // IROHA_APPLICATION_HPP
