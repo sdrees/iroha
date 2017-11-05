@@ -44,7 +44,6 @@ namespace shared_model {
       std::string toString() const override {
         return detail::PrettyStringBuilder()
             .init("RolePermissionsResponse")
-            .append("rolePermissions")
             .appendAll(rolePermissions(), [](auto perm) { return perm; })
             .finalize();
       }
