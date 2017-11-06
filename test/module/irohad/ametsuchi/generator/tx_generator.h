@@ -50,27 +50,6 @@ unsigned int SEED_ = 1337;
 const char ALPHABET[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-/**
- * returns a number in a range [min, max)
- */
-int64_t random_number(int64_t min, int64_t max) {
-  return min + (rand_r(&SEED_) % (max - min));
-}
-
-uint8_t random_printable_char() { return (uint8_t)random_number(32, 126 + 1); }
-
-
-std::string random_string(size_t length, std::string alphabet = ALPHABET) {
-  assert(alphabet.size() > 0);
-  std::string s;
-  std::generate_n(std::back_inserter(s), length, [&alphabet]() {
-    size_t i = (size_t)random_number(0, alphabet.size());
-    return (char)alphabet[i];
-  });
-  return s;
-}
-
-
 std::string random_base64_string(size_t length) {
   const char alph[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

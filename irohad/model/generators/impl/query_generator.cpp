@@ -68,9 +68,11 @@ namespace iroha {
         return query;
       }
 
-      std::shared_ptr<GetAccountTransactions> QueryGenerator::generateGetAccountTransactions(
-          ts64_t timestamp, std::string creator, uint64_t query_counter,
-          std::string account_id, model::Pager pager) {
+      optional_ptr<GetAccountTransactions>
+      QueryGenerator::generateGetAccountTransactions(
+        ts64_t timestamp, const std::string& creator,
+        uint64_t query_counter, const std::string& account_id,
+        const model::Pager& pager) const {
         auto query = std::make_shared<GetAccountTransactions>();
         query->created_ts = timestamp;
         query->creator_account_id = creator;
@@ -80,9 +82,12 @@ namespace iroha {
         return query;
       }
 
-      std::shared_ptr<GetAccountAssetTransactions> QueryGenerator::generateGetAccountAssetTransactions(
-          ts64_t timestamp, std::string creator, uint64_t query_counter,
-          std::string account_id, std::vector<std::string> assets_id, model::Pager pager) {
+      optional_ptr<GetAccountAssetTransactions>
+      QueryGenerator::generateGetAccountAssetTransactions(
+          ts64_t timestamp, const std::string& creator,
+          uint64_t query_counter, const std::string& account_id,
+          const std::vector<std::string>& assets_id,
+          const model::Pager& pager) const {
         auto query = std::make_shared<GetAccountAssetTransactions>();
         query->created_ts = timestamp;
         query->creator_account_id = creator;

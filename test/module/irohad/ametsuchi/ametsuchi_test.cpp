@@ -21,6 +21,7 @@
 #include "common/byteutils.hpp"
 #include "crypto/hash.hpp"
 #include "framework/test_subscriber.hpp"
+#include "generator/generator.hpp"
 #include "model/commands/add_asset_quantity.hpp"
 #include "model/commands/add_peer.hpp"
 #include "model/commands/add_signatory.hpp"
@@ -40,27 +41,6 @@ using namespace iroha::ametsuchi;
 using namespace iroha::model;
 using namespace framework::test_subscriber;
 
-unsigned int SEED_ = 1337;
-const char LOWER_ALPHABET[] = "abcdefghijklmnopqrstuvwxyz";
-
-/**
- * returns a number in a range [min, max)
- */
-int64_t random_number(int64_t min, int64_t max) {
-  return min + (rand_r(&SEED_) % (max - min));
-}
-
-inline std::string random_string(size_t length,
-                                 std::string alphabet = LOWER_ALPHABET) {
-  assert(alphabet.size() > 0);
-  std::string s;
-  std::generate_n(std::back_inserter(s), length, [&alphabet]() {
-    size_t i = (size_t) random_number(0, alphabet.size());
-    return (char) alphabet[i];
-  });
-  return s;
-}
-
 inline iroha::model::Block make_block(
   const std::vector<iroha::model::Transaction> &transactions,
   uint64_t height,
@@ -78,7 +58,8 @@ inline iroha::model::Block make_block(
 inline iroha::model::Transaction make_tx(
   const std::string &creator,
   const std::vector<std::shared_ptr<iroha::model::Command>> &commands = {
-    std::make_shared<iroha::model::CreateDomain>(random_string(20), "user")}) {
+    std::make_shared<iroha::model::CreateDomain>(
+      generator::random_string(20, generator::random_lower_char), "user")}) {
   auto tx = iroha::model::Transaction{};
   tx.creator_account_id = creator;
   tx.commands = commands;

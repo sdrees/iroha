@@ -23,6 +23,7 @@
 
 #include "interactive/interactive_common_cli.hpp"
 #include "logger/logger.hpp"
+#include "model/common.hpp"
 #include "model/generators/query_generator.hpp"
 #include "model/model_crypto_provider.hpp"
 #include "model/query.hpp"
@@ -98,7 +99,7 @@ namespace iroha_cli {
       std::shared_ptr<iroha::model::Query> parseGetAccountTransactions(
           QueryParams params);
       std::shared_ptr<iroha::model::Query> parseGetAccountAssetTransactions(
-        QueryParams params);
+          QueryParams params);
       std::shared_ptr<iroha::model::Query> parseGetSignatories(
           QueryParams params);
       std::shared_ptr<iroha::model::Query> parseGetRoles(QueryParams params);
@@ -107,8 +108,8 @@ namespace iroha_cli {
       std::shared_ptr<iroha::model::Query> parseGetAssetInfo(
           QueryParams params);
       //  --- Specific QueryParam parsers ---
-      nonstd::optional<iroha::model::Pager> parsePager(const QueryParams& params);
-      std::vector<std::string> parseAssetId(const std::string& param);
+      nonstd::optional<iroha::model::Pager> parsePager(QueryParams params);
+      std::vector<std::string> parseAssetId(const std::string& param) const;
       // ------ Result parsers -------
       using ResultHandler = bool (InteractiveQueryCli::*)(QueryParams);
       std::unordered_map<QueryName, ResultHandler> result_handlers_;

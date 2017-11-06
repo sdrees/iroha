@@ -40,7 +40,7 @@ namespace iroha {
        * @return observable of Model Transaction
        */
       virtual rxcpp::observable<model::Transaction> getAccountTransactions(
-          std::string account_id, model::Pager pager) = 0;
+          const std::string& account_id, const model::Pager& pager) = 0;
 
       /**
        * Get asset transactions of an account.
@@ -50,9 +50,9 @@ namespace iroha {
        * @return observable of Model Transaction
        */
       virtual rxcpp::observable<model::Transaction>
-      getAccountAssetTransactions(std::string account_id,
-                                  std::vector<std::string> assets_id,
-                                  model::Pager pager) = 0;
+      getAccountAssetTransactions(const std::string& account_id,
+                                  const std::vector<std::string>& assets_id,
+                                  const model::Pager& pager) = 0;
 
       /**
        * Get given number of blocks starting with given height.

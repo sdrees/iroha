@@ -22,7 +22,8 @@
 
 #include "ametsuchi/impl/flat_file/flat_file.hpp"
 #include "model/converters/json_block_factory.hpp"
-#include "model/queries/get_transactions.hpp"
+#include "model/queries/get_account_transactions.hpp"
+#include "model/queries/get_account_asset_transactions.hpp"
 
 namespace iroha {
   namespace ametsuchi {
@@ -38,16 +39,31 @@ namespace iroha {
       rxcpp::observable<model::Block> getTopBlocks(uint32_t count) override;
 
       rxcpp::observable<model::Transaction> getAccountTransactions(
-        std::string account_id, model::Pager pager) override;
+        const std::string& account_id, const model::Pager& pager) override;
 
       rxcpp::observable<model::Transaction> getAccountAssetTransactions(
-        std::string account_id, std::vector<std::string> assets_id,
-        model::Pager pager) override;
+        const std::string& account_id,
+        const std::vector<std::string>& assets_id,
+        const model::Pager& pager) override;
 
      protected:
       FlatFile &block_store_;
-
       model::converters::JsonBlockFactory serializer_;
+
+     private:
+      template <typename CommandType, typename Predicate>
+      bool searchCommand(const std::shared_ptr<iroha::model::Command>& command,
+                         const Predicate& predicate) const {
+        if (const auto p = std::dynamic_pointer_cast<CommandType>(command)) {
+          return predicate(*p);
+        }
+        return false;
+      }
+
+      bool hasAssetRelatedCommand(
+        const std::string& account_id,
+        const std::vector<std::string>& assets_id,
+        const std::shared_ptr<iroha::model::Command>& command) const;
     };
   }  // namespace ametsuchi
 }  // namespace iroha

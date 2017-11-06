@@ -66,7 +66,7 @@ TEST(PbQueryFactoryTest, SerializeGetAccountTransactions){
   QueryGenerator queryGenerator;
   auto query = queryGenerator.generateGetAccountTransactions(
     0, "123", 0, "test", Pager{iroha::hash256_t{}, 1});
-  runQueryTest(query);
+  runQueryTest(*query);
 }
 
 TEST(PbQueryFactoryTest, SerializeGetAccountAssetsTransactions) {
@@ -74,7 +74,7 @@ TEST(PbQueryFactoryTest, SerializeGetAccountAssetsTransactions) {
   QueryGenerator queryGenerator;
   auto query = queryGenerator.generateGetAccountAssetTransactions(
     0, "123", 0, "test", {"a", "b"}, Pager{iroha::hash256_t{}, 1});
-  runQueryTest(query);
+  runQueryTest(*query);
 }
 
 TEST(PbQueryFactoryTest, SerializeGetSignatories){

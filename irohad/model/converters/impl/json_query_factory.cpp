@@ -23,7 +23,8 @@
 #include "model/queries/get_asset_info.hpp"
 #include "model/queries/get_roles.hpp"
 #include "model/queries/get_signatories.hpp"
-#include "model/queries/get_transactions.hpp"
+#include "model/queries/get_account_transactions.hpp"
+#include "model/queries/get_account_asset_transactions.hpp"
 
 using namespace rapidjson;
 
@@ -240,11 +241,13 @@ namespace iroha {
                            allocator);
         Value json_assets_id;
         json_assets_id.SetArray();
-        for (const auto& id : get_account_asset->assets_id) {
+        const auto& assets_id = get_account_asset->assets_id;
+        std::for_each(assets_id.begin(), assets_id.end(),
+                      [&json_assets_id, &allocator](auto asset_id) {
           Value json_id;
-          json_id.Set(id, allocator);
+          json_id.Set(asset_id, allocator);
           json_assets_id.PushBack(json_id, allocator);
-        }
+        });
         json_doc.AddMember("assets_id", json_assets_id, allocator);
         Value json_pager;
         json_pager.SetObject();

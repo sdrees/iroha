@@ -158,8 +158,10 @@ TEST(QuerySerializerTest, SerializeGetAccountAssets){
 TEST(QuerySerializerTest, SerializeGetAccountTransactions){
   JsonQueryFactory queryFactory;
   QueryGenerator queryGenerator;
-  auto val = queryGenerator.generateGetAccountTransactions(
+  auto val_ = queryGenerator.generateGetAccountTransactions(
     0, "123", 0, "test", Pager{iroha::hash256_t{}, 1});
+  ASSERT_TRUE(val_.has_value());
+  auto val = *val_;
   val->signature = generateSignature(42);
   auto json = queryFactory.serialize(val);
   auto ser_val = queryFactory.deserialize(json);
@@ -204,8 +206,10 @@ TEST(QuerySerializerTest, get_role_permissions){
 TEST(QuerySerializerTest, SerializeGetAccountAssetTransactions) {
   JsonQueryFactory queryFactory;
   QueryGenerator queryGenerator;
-  auto val = queryGenerator.generateGetAccountAssetTransactions(
+  auto val_ = queryGenerator.generateGetAccountAssetTransactions(
     0, "123", 0, "test", {"a", "b"}, model::Pager{iroha::hash256_t{}, 1});
+  ASSERT_TRUE(val_.has_value());
+  auto val = *val_;
   val->signature = generateSignature(42);
   runQueryTest(val);
 }

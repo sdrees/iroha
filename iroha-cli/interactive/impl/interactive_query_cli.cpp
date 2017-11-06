@@ -17,8 +17,8 @@
 
 #include "interactive/interactive_query_cli.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <fstream>
-
 #include "client.hpp"
 #include "crypto/crypto.hpp"
 #include "crypto/hash.hpp"
@@ -28,6 +28,7 @@
 #include "model/converters/json_query_factory.hpp"
 #include "model/queries/get_asset_info.hpp"
 #include "model/queries/get_roles.hpp"
+#include "types.hpp"
 
 using namespace iroha::model;
 
@@ -169,25 +170,38 @@ namespace iroha_cli {
     }
 
     nonstd::optional<iroha::model::Pager>
-    InteractiveQueryCli::parsePager(const QueryParams& params) {
+    InteractiveQueryCli::parsePager(QueryParams params) {
       const auto encoded_tx_hash = params[0];
       const auto limit_str = params[1];
+      /**
+       * Use '-' as the argument of tx_hash to specify that the hash is empty
+       * because interactive cli splits arguments by space.
+       */
       const auto PAGER_TX_HASH_EMPTY = "-";
 
       Pager pager;
       if (encoded_tx_hash == PAGER_TX_HASH_EMPTY) {
         pager.tx_hash.fill(0);
       } else {
-        const auto decoded_hash = iroha::hexstringToBytestring(encoded_tx_hash);
+        const auto decoded_hash =
+          iroha::hexstringToBytestring(encoded_tx_hash);
         if (not decoded_hash) {
           return nonstd::nullopt;
         }
         pager.tx_hash = iroha::hash256_t::from_string(*decoded_hash);
       }
 
-      try {
-        pager.limit = static_cast<uint16_t>(std::stoul(limit_str));
-      } catch(...) {
+      pager.limit = [&pager, &limit_str] {
+        using RetType = decltype(pager.limit);
+        try {
+          return boost::lexical_cast<RetType>(limit_str);
+        } catch (...) {
+          return RetType(0);
+        }
+      }();
+
+      /// No transactions can be retrieved when pager.limit = 0
+      if (pager.limit == 0) {
         return nonstd::nullopt;
       }
 
@@ -195,19 +209,26 @@ namespace iroha_cli {
     }
 
     std::shared_ptr<iroha::model::Query>
-    InteractiveQueryCli::parseGetAccountTransactions(QueryParams params) {
-      const auto account_id = params[0];
-      const auto encoded_tx_hash = params[1];
-      const auto limit_str = params[2];
-      const auto pager = parsePager({encoded_tx_hash, limit_str});
-      if (not pager.has_value()) { return nullptr; }
-      return generator_.generateGetAccountTransactions(local_time_, creator_,
-                                                       counter_, account_id,
-                                                       *pager);
+    InteractiveQueryCli::parseGetAccountTransactions(
+        QueryParams params) {
+      ///TODO 01/11/17 motxx - Using cli with environment
+      /// options can remove unnamed arguments in interactive-cli.
+      /// Example: GetAccountTransactions with no tx_hash
+      /// ./iroha-cli GetAccountTransactions --from alice@domain \
+      ///             --to alice@domain --limit 10
+      const auto encoded_tx_hash = params[0];
+      const auto limit_str = params[1];
+      const auto account_id = encoded_tx_hash;
+      using iroha::operator|; /// To use operator| in namespace iroha.
+      return (parsePager({params[1], params[2]}) | [this, &account_id](
+          const auto& pager) {
+        return generator_.generateGetAccountTransactions(
+          local_time_, creator_, counter_, account_id, pager);
+      }).value_or(nullptr); ///HACK 26/06/11 motxx: danger solution to use monadic bind operator
     }
 
     std::vector<std::string>
-    InteractiveQueryCli::parseAssetId(const std::string& param) {
+    InteractiveQueryCli::parseAssetId(const std::string& param) const {
       std::vector<std::string> assets;
       std::stringstream ss(param);
       std::string token;
@@ -218,7 +239,8 @@ namespace iroha_cli {
     }
 
     std::shared_ptr<iroha::model::Query>
-    InteractiveQueryCli::parseGetAccountAssetTransactions(QueryParams params) {
+    InteractiveQueryCli::parseGetAccountAssetTransactions(
+        QueryParams params) {
       const auto account_id = params[0];
       const auto num_asset_id = params[1];
       const auto asset_id = params[2];
@@ -226,11 +248,13 @@ namespace iroha_cli {
       const auto limit_str = params[4];
 
       const auto assets = parseAssetId(asset_id);
-      const auto pager = parsePager({encoded_tx_hash, limit_str});
-      if (not pager.has_value()) { return nullptr; }
-      return generator_.generateGetAccountAssetTransactions(local_time_, creator_,
-                                                            counter_, account_id,
-                                                            assets, *pager);
+      using iroha::operator|; /// To use operator| in namespace iroha.
+      return (parsePager({encoded_tx_hash, limit_str}) | [this, &account_id, &assets](
+          const auto& pager) {
+        return generator_.generateGetAccountAssetTransactions(
+          local_time_, creator_, counter_, account_id,
+          assets, pager);
+      }).value_or(nullptr); ///HACK 26/06/11 motxx: danger solution to use monadic bind operator
     }
 
     std::shared_ptr<iroha::model::Query>
