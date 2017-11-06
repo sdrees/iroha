@@ -66,17 +66,6 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
  public:
   TxPipelineIntegrationTest() {
     // spdlog::set_level(spdlog::level::off);
-    torii.host = parse_env(IROHA_TORII_HOST, LOCALHOST);
-    torii.port = parse_env(IROHA_TORII_PORT, 50051);
-
-    auto load_d = parse_env(IROHA_OTHER_LOADDELAY, 5000);
-    auto vote_d = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
-    auto proposal_d = parse_env(IROHA_OTHER_PROPOSALDELAY, 5000);
-
-    other.load_delay = std::chrono::milliseconds(load_d);
-    other.vote_delay = std::chrono::milliseconds(vote_d);
-    other.proposal_delay = std::chrono::milliseconds(proposal_d);
-    other.max_proposal_size = parse_env(IROHA_OTHER_PROPOSALSIZE, 10);
   }
 
   ToriiConfig torii{};
@@ -85,6 +74,21 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
 
   void SetUp() override {
     irohad = std::make_shared<TestIrohad>();
+    iroha::ametsuchi::AmetsuchiTest::SetUp();
+
+    {
+      torii.host = parse_env(IROHA_TORII_HOST, LOCALHOST);
+      torii.port = parse_env(IROHA_TORII_PORT, 50051);
+
+      auto load_d = parse_env(IROHA_OTHER_LOADDELAY, 5000);
+      auto vote_d = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
+      auto proposal_d = parse_env(IROHA_OTHER_PROPOSALDELAY, 5000);
+
+      other.load_delay = std::chrono::milliseconds(load_d);
+      other.vote_delay = std::chrono::milliseconds(vote_d);
+      other.proposal_delay = std::chrono::milliseconds(proposal_d);
+      other.max_proposal_size = parse_env(IROHA_OTHER_PROPOSALSIZE, 10);
+    }
 
     genesis_block =
         iroha::model::generators::BlockGenerator().generateGenesisBlock(

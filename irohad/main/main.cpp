@@ -46,12 +46,12 @@ int main(int argc, char *argv[]) {
   main.add_flag("-v,--version"s,
                 [&argv](size_t) {
                   std::cout << argv[0] << " version " IROHA_VERSION_STR "\n";
-                  exit(EXIT_SUCCESS);
+                  std::exit(EXIT_SUCCESS);
                 },
                 "Current version"s);
 
   /// DEFAULTS
-  std::string genesis_path;
+  std::string genesis_path = defaults::blockStoragePath;
 
   iroha::ametsuchi::config::Ametsuchi ametsuchi{};
   ametsuchi.postgres.host = defaults::postgresHost;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   // ledger create
   auto ledger_create = ledger->add_subcommand(
       "create"s, "Create new network with given genesis block"s);
-  addCreateLedgerFlags(ledger_create, genesis_path);
+  addCreateLedgerFlags(ledger_create, &genesis_path);
   ledger_create->set_callback([&]() {
     cli::handler::ledger::create(&ametsuchi, genesis_path);
   });
@@ -113,5 +113,5 @@ int main(int argc, char *argv[]) {
 
   CLI11_PARSE(main, argc, argv);
 
-  return 0;
+  std::exit(EXIT_SUCCESS);
 }

@@ -145,8 +145,7 @@ void Application::initBlockLoader() {
 }
 
 void Application::initConsensusGate(const iroha::torii::config::Torii &torii,
-                                    const std::chrono::milliseconds &vote_delay,
-                                    const std::chrono::milliseconds &load_delay,
+                                    const config::OtherOptions &other,
                                     const iroha::keypair_t &keypair) {
   PRECONDITION_TRUE(wsv);
   PRECONDITION_TRUE(simulator);
@@ -157,8 +156,8 @@ void Application::initConsensusGate(const iroha::torii::config::Torii &torii,
                                               simulator,
                                               block_loader,
                                               keypair,
-                                              vote_delay,
-                                              load_delay);
+                                              other.vote_delay,
+                                              other.load_delay);
 
   POSTCONDITION_TRUE(consensus_gate);
 

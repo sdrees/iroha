@@ -18,9 +18,6 @@ dependency docker || exit 2
 dependency grep   || exit 3
 dependency sed    || exit 4
 
-# usage
-# $ 
-
 # cleanup
 docker rm -f pg rd 2>/dev/null 1>&2
 

@@ -19,6 +19,7 @@
 #define IROHA_FLAGS_HPP_
 
 #include <CLI/CLI.hpp>
+#include <boost/assert.hpp>
 #include "ametsuchi/config.hpp"
 #include "common.hpp"
 #include "env-vars.hpp"
@@ -27,9 +28,20 @@
 
 using std::literals::string_literals::operator""s;
 
+#define PORT_MIN 1
+#define PORT_MAX 65535
+#define DELAY_MIN 1
+#define DELAY_MAX 100000
+#define SIZE_MIN 1
+#define SIZE_MAX 100000
+
 inline void addPeerFlags(CLI::App *p,
                          iroha::torii::config::Torii *torii,
                          iroha::config::Cryptography *crypto) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(torii);
+  BOOST_ASSERT(crypto);
+
   p->add_option("--host"s,                      /* option's name */
                 torii->host,                    /* bind to this variable */
                 "Peer's address to listen on"s, /* description */
@@ -40,7 +52,7 @@ inline void addPeerFlags(CLI::App *p,
 
   p->add_option("--port"s, torii->port, "Peer's port to listen on"s, true)
       ->envname(IROHA_TORII_PORT)
-      ->check(CLI::Range(1, 65535))
+      ->check(CLI::Range(PORT_MIN, PORT_MAX))
       ->group("Peer"s);
 
   p->add_option(
@@ -60,6 +72,8 @@ inline void addPeerFlags(CLI::App *p,
 
 inline void addPostgresFlags(CLI::App *p,
                              iroha::ametsuchi::config::Postgres *postgres) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(postgres);
   p->add_option(
        "--pghost"s, postgres->host, "PostgreSQL database host. "s, true)
       ->envname(IROHA_PGHOST)
@@ -68,7 +82,7 @@ inline void addPostgresFlags(CLI::App *p,
 
   p->add_option("--pgport"s, postgres->port, "PostgreSQL database port."s, true)
       ->envname(IROHA_PGPORT)
-      ->check(CLI::Range(1, 65535))
+      ->check(CLI::Range(PORT_MIN, PORT_MAX))
       ->group("PostgreSQL"s);
 
   p->add_option(
@@ -89,6 +103,8 @@ inline void addPostgresFlags(CLI::App *p,
 }
 
 inline void addRedisFlags(CLI::App *p, iroha::ametsuchi::config::Redis *redis) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(redis);
   p->add_option("--rdhost"s, redis->host, "Redis database host"s, true)
       ->envname(IROHA_RDHOST)
       ->group("Redis"s)
@@ -96,12 +112,14 @@ inline void addRedisFlags(CLI::App *p, iroha::ametsuchi::config::Redis *redis) {
 
   p->add_option("--rdport"s, redis->port, "Redis database port"s, true)
       ->envname(IROHA_RDPORT)
-      ->check(CLI::Range(1, 65535))
+      ->check(CLI::Range(PORT_MIN, PORT_MAX))
       ->group("Redis"s);
 }
 
 inline void addBlockStorageFlags(
     CLI::App *p, iroha::ametsuchi::config::BlockStorage *storage) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(storage);
   p->add_option("--blockspath"s,
                 storage->path,
                 "Path to the folder, where blocks are saved",
@@ -110,15 +128,19 @@ inline void addBlockStorageFlags(
       ->group("Block Storage");
 }
 
-inline void addCreateLedgerFlags(CLI::App *p,
-                                 std::string& genesis) {
-  p->add_option("genesis-block", genesis, "Path to the genesis block"s)
+inline void addCreateLedgerFlags(CLI::App *p, std::string *genesis) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(genesis);
+  p->add_option("genesis-block", *genesis, "Path to the genesis block"s)
       ->required()
       ->check(CLI::ExistingFile);
 }
 
 inline void addOtherOptionsFlags(CLI::App *p,
                                  iroha::config::OtherOptions *options) {
+  BOOST_ASSERT(p);
+  BOOST_ASSERT(options);
+
   // copy default values, otherwise they will be equal to 0
   auto load_d = static_cast<size_t>(options->load_delay.count());
   auto vote_d = static_cast<size_t>(options->vote_delay.count());
@@ -130,7 +152,7 @@ inline void addOtherOptionsFlags(CLI::App *p,
        "Waiting time before loading committed block from next, milliseconds"s,
        true)
       ->group("Other")
-      ->check(CLI::Range(1, 100000))
+      ->check(CLI::Range(DELAY_MIN, DELAY_MAX))
       ->envname(IROHA_OTHER_LOADDELAY);
   options->load_delay = std::chrono::milliseconds(load_d);
 
@@ -139,7 +161,7 @@ inline void addOtherOptionsFlags(CLI::App *p,
                 "Waiting time before sending vote to next peer, milliseconds"s,
                 true)
       ->group("Other")
-      ->check(CLI::Range(1, 100000))
+      ->check(CLI::Range(DELAY_MIN, DELAY_MAX))
       ->envname(IROHA_OTHER_VOTEDELAY);
   options->vote_delay = std::chrono::milliseconds(vote_d);
 
@@ -148,7 +170,7 @@ inline void addOtherOptionsFlags(CLI::App *p,
                 "maximum waiting time util emitting new proposal"s,
                 true)
       ->group("Other")
-      ->check(CLI::Range(1, 100000))
+      ->check(CLI::Range(DELAY_MIN, DELAY_MAX))
       ->envname(IROHA_OTHER_PROPOSALDELAY);
   options->proposal_delay = std::chrono::milliseconds(proposal_d);
 
@@ -157,7 +179,7 @@ inline void addOtherOptionsFlags(CLI::App *p,
                 "Maximum transactions in one proposal"s,
                 true)
       ->group("Other")
-      ->check(CLI::Range(1, 100000))
+      ->check(CLI::Range(SIZE_MIN, SIZE_MAX))
       ->envname(IROHA_OTHER_PROPOSALSIZE);
 }
 

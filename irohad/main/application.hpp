@@ -77,8 +77,7 @@ class Application {
   virtual void initBlockLoader();
 
   virtual void initConsensusGate(const iroha::torii::config::Torii &,
-                                 const std::chrono::milliseconds &vote_delay,
-                                 const std::chrono::milliseconds &load_delay,
+                                 const iroha::config::OtherOptions &,
                                  const iroha::keypair_t &);
 
   virtual void initSynchronizer();

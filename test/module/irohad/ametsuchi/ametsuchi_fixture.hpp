@@ -45,7 +45,9 @@ namespace iroha {
 
       AmetsuchiTest(){
         auto log = logger::testLog("AmetsuchiTest");
+      }
 
+      virtual void SetUp() override {
         config.redis.host = parse_env(IROHA_RDHOST, LOCALHOST);
         config.redis.port = parse_env(IROHA_RDPORT, 6379);
 
