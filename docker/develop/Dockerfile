@@ -80,6 +80,12 @@ RUN git clone https://github.com/Reactive-Extensions/RxCpp /tmp/RxCpp; \
     cmake --build /tmp/RxCpp/build --target install; \
     rm -rf /tmp/RxCpp
 
+# install cliutils
+RUN git clone https://github.com/CLIUtils/CLI11 /tmp/cliutils; \
+    (cd /tmp/cliutils ; git checkout v1.2.0); \
+    cp -r /tmp/cliutils/include/CLI /usr/local/include; \
+    rm -rf /tmp/cliutils
+
 # install rapidjson
 RUN git clone https://github.com/miloyip/rapidjson /tmp/rapidjson; \
     (cd /tmp/rapidjson ; git checkout f54b0e47a08782a6131cc3d60f94d038fa6e0a51); \

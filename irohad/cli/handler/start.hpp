@@ -20,9 +20,9 @@
 
 #include <boost/assert.hpp>
 #include "common/types.hpp"
+#include "crypto/keys_manager_impl.hpp"
 #include "main/application.hpp"
 #include "util/filesystem.hpp"
-#include "crypto/keys_manager_impl.hpp"
 
 namespace iroha {
   namespace cli {
@@ -31,6 +31,7 @@ namespace iroha {
       inline void start(const ametsuchi::config::Ametsuchi *am,
                         const iroha::config::Cryptography *crypto,
                         const iroha::config::OtherOptions *other,
+                        const iroha::config::Peer *peer,
                         const torii::config::Torii *torii) {
         BOOST_ASSERT_MSG(am, "ametsuchi config is nullptr");
         BOOST_ASSERT_MSG(crypto, "crypto config is nullptr");
@@ -44,33 +45,24 @@ namespace iroha {
         // since it will be rewritten later, no need in good code here
         {
           KeysManagerImpl km;
-          km.loadKeys(crypto->public_key, crypto->private_key);
+          auto opt_keypair = km.loadKeys(crypto->public_key, crypto->private_key);
+          if(opt_keypair) {
+            keypair = *opt_keypair;
+          } else {
+            log->error("keypair can not be parsed");
+            std::exit(EXIT_FAILURE);
+          }
         }
 
         try {
-          Application irohad;
-          irohad.initStorage(*am);
-          irohad.initProtoFactories();
-          irohad.initPeerQuery();
-          irohad.initCryptoProvider(keypair);
-          irohad.initValidators();
-          irohad.initOrderingGate(*other);
-          irohad.initSimulator();
-          irohad.initBlockLoader();
-          irohad.initConsensusGate(
-              *torii, other->vote_delay, other->load_delay, keypair);
-          irohad.initSynchronizer();
-          irohad.initPeerCommunicationService();
-          irohad.initTransactionCommandService();
-          irohad.initQueryService();
-          log->info("initialized");
+          Application irohad(*am, *torii, *peer, *other, keypair);
+          irohad.init();
+          irohad.run();
 
-          irohad.run(*torii);
-
-          exit(EXIT_SUCCESS);
+          std::exit(EXIT_SUCCESS);
         } catch (const std::exception &e) {
           log->error("FATAL: {}", e.what());
-          exit(EXIT_FAILURE);
+          std::exit(EXIT_FAILURE);
         }
       }
     }

@@ -49,10 +49,11 @@ namespace iroha {
          *
          * Now config is applied.
          */
-        inline void config(const iroha::ametsuchi::config::Ametsuchi *am,
-                           const iroha::config::OtherOptions *other,
+        inline void config(const ametsuchi::config::Ametsuchi *am,
                            const iroha::config::Cryptography *crypto,
-                           const iroha::torii::config::Torii *torii) {
+                           const iroha::config::OtherOptions *other,
+                           const iroha::config::Peer *peer,
+                           const torii::config::Torii *torii) {
           using util::make_env_str;
           std::stringstream ss;
 
@@ -83,7 +84,10 @@ namespace iroha {
               << make_env_str(IROHA_PEER_PRIVKEY, crypto->private_key) << '\n'
               // torii
               << make_env_str(IROHA_TORII_HOST, torii->host) << '\n'
-              << make_env_str(IROHA_TORII_PORT, torii->port) << '\n';
+              << make_env_str(IROHA_TORII_PORT, torii->port) << '\n'
+              // peer
+              << make_env_str(IROHA_PEER_HOST, peer->host) << '\n'
+              << make_env_str(IROHA_PEER_PORT, peer->port) << '\n';
 
           std::cout << ss.str();
           std::exit(EXIT_SUCCESS);

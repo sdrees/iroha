@@ -36,21 +36,37 @@ using std::literals::string_literals::operator""s;
 #define SIZE_MAX 100000
 
 inline void addPeerFlags(CLI::App *p,
+                         iroha::config::Peer *peer,
                          iroha::torii::config::Torii *torii,
                          iroha::config::Cryptography *crypto) {
   BOOST_ASSERT(p);
   BOOST_ASSERT(torii);
   BOOST_ASSERT(crypto);
+  BOOST_ASSERT(peer);
 
-  p->add_option("--host"s,                      /* option's name */
-                torii->host,                    /* bind to this variable */
-                "Peer's address to listen on"s, /* description */
+  // both flags can be used for the same thing
+  p->add_option("--api-host,--torii-host"s,        /* option's name */
+                torii->host,                       /* bind to this variable */
+                "Client API (torii) listen host"s, /* description */
                 true /* use initial value as default */)
       ->envname(IROHA_TORII_HOST)
       ->group("Peer"s)
       ->check(iroha::network::is_host_valid);
 
-  p->add_option("--port"s, torii->port, "Peer's port to listen on"s, true)
+  p->add_option("--api-port,--torii-port"s,
+                torii->port,
+                "Client API (torii) listen port"s,
+                true)
+      ->envname(IROHA_TORII_PORT)
+      ->check(CLI::Range(PORT_MIN, PORT_MAX))
+      ->group("Peer"s);
+
+  p->add_option("--host"s, peer->host, "Peer's listen address"s, true)
+      ->envname(IROHA_TORII_HOST)
+      ->group("Peer"s)
+      ->check(iroha::network::is_host_valid);
+
+  p->add_option("--port"s, peer->port, "Peer's listen port"s, true)
       ->envname(IROHA_TORII_PORT)
       ->check(CLI::Range(PORT_MIN, PORT_MAX))
       ->group("Peer"s);

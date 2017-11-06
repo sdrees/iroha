@@ -39,17 +39,24 @@ using AmetsuchiConfig = iroha::ametsuchi::config::Ametsuchi;
 
 class TestIrohad : public Application {
  public:
+  TestIrohad(const iroha::ametsuchi::config::Ametsuchi &am,
+             const iroha::torii::config::Torii &t,
+             const iroha::config::Peer &p,
+             const iroha::config::OtherOptions &o,
+             const iroha::keypair_t kp)
+      : Application(am, t, p, o, kp) {}
+
   auto &getCommandService() { return command_service; }
 
   auto &getPeerCommunicationService() { return pcs; }
 
   auto &getCryptoProvider() { return crypto_verifier; }
 
-  void run(const ToriiConfig &torii) override {
+  void run() override {
     grpc::ServerBuilder builder;
     int port = 0;
     builder.AddListeningPort(
-        torii.listenAddress(), grpc::InsecureServerCredentials(), &port);
+        torii_.listenAddress(), grpc::InsecureServerCredentials(), &port);
 
     builder.RegisterService(ordering_init.ordering_gate_transport.get());
     builder.RegisterService(ordering_init.ordering_service_transport.get());
@@ -69,16 +76,18 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
   }
 
   ToriiConfig torii{};
+  config::Peer peer{};
   config::OtherOptions other{};
-  config::Cryptography crypto{};
 
   void SetUp() override {
-    irohad = std::make_shared<TestIrohad>();
     iroha::ametsuchi::AmetsuchiTest::SetUp();
 
     {
+      peer.host = parse_env(IROHA_PEER_HOST, LOCALHOST);
+      peer.port = parse_env(IROHA_PEER_PORT, defaults::peerPort);
+
       torii.host = parse_env(IROHA_TORII_HOST, LOCALHOST);
-      torii.port = parse_env(IROHA_TORII_PORT, 50051);
+      torii.port = parse_env(IROHA_TORII_PORT, defaults::toriiPort);
 
       auto load_d = parse_env(IROHA_OTHER_LOADDELAY, 5000);
       auto vote_d = parse_env(IROHA_OTHER_VOTEDELAY, 5000);
@@ -96,31 +105,17 @@ class TxPipelineIntegrationTest : public iroha::ametsuchi::AmetsuchiTest {
     manager = std::make_shared<iroha::KeysManagerImpl>("node0");
     auto keypair = manager->loadKeys().value();
 
-    irohad->initStorage(this->config);
+    irohad = std::make_shared<TestIrohad>(config, torii, peer, other, keypair);
 
-    // NOTE: genesis block should be inserted after initStorage but before initConsensusGate
+    ASSERT_TRUE(irohad->storage);
+
     // insert genesis block
     iroha::main::BlockInserter inserter(irohad->storage);
     inserter.applyToLedger({genesis_block});
 
-    irohad->initProtoFactories();
-    irohad->initPeerQuery();
-    irohad->initCryptoProvider(keypair);
-    irohad->initValidators();
-    irohad->initOrderingGate(other);
-    irohad->initSimulator();
-    irohad->initBlockLoader();
-    irohad->initConsensusGate(
-        torii, other.vote_delay, other.load_delay, keypair);
-    irohad->initSynchronizer();
-    irohad->initPeerCommunicationService();
-    irohad->initTransactionCommandService();
-    irohad->initQueryService();
-
-    ASSERT_TRUE(irohad->storage);
-
     // start irohad
-    irohad->run(torii);
+    irohad->init();
+    irohad->run();
   }
 
   void TearDown() override {

@@ -16,6 +16,7 @@
  */
 
 #include "main/application.hpp"
+#include <crypto/keys_manager_impl.hpp>
 
 #define PRECONDITION_TRUE(module) \
   BOOST_ASSERT_MSG(module, "[precondition] #module failed");
@@ -34,7 +35,37 @@ using namespace iroha::model::converters;
 using namespace iroha::consensus::yac;
 using namespace iroha::config;
 
-Application::Application() : log_(logger::log("application")) {}
+Application::Application(const iroha::ametsuchi::config::Ametsuchi &am,
+                         const iroha::torii::config::Torii &t,
+                         const iroha::config::Peer &p,
+                         const iroha::config::OtherOptions &o,
+                         const iroha::keypair_t keypair)
+    : log_(logger::log("application")) {
+  ametsuchi_config_ = am;
+  torii_ = t;
+  peer_ = p;
+  other_ = o;
+  keypair_ = keypair;
+
+  initStorage();
+}
+
+void Application::init(){
+  initProtoFactories();
+  initPeerQuery();
+  initCryptoProvider();
+  initValidators();
+  initOrderingGate();
+  initSimulator();
+  initBlockLoader();
+  initConsensusGate();
+  initSynchronizer();
+  initPeerCommunicationService();
+
+  // Torii
+  initTransactionCommandService();
+  initQueryService();
+}
 
 Application::~Application() {
   if (internal_server) {
@@ -48,8 +79,8 @@ Application::~Application() {
   }
 }
 
-void Application::initStorage(const iroha::ametsuchi::config::Ametsuchi &am) {
-  storage = StorageImpl::create(am);
+void Application::initStorage() {
+  storage = StorageImpl::create(ametsuchi_config_);
 
   // TODO (@warchant): if the storage is nullptr, then we do not have conenction
   // to redis OR postgres. Handle this.
@@ -78,8 +109,8 @@ void Application::initPeerQuery() {
   log_->info("[Init] => peer query");
 }
 
-void Application::initCryptoProvider(const iroha::keypair_t &keypair) {
-  crypto_verifier = std::make_shared<ModelCryptoProviderImpl>(keypair);
+void Application::initCryptoProvider() {
+  crypto_verifier = std::make_shared<ModelCryptoProviderImpl>(keypair_);
 
   POSTCONDITION_TRUE(crypto_verifier);
 
@@ -102,11 +133,11 @@ void Application::initValidators() {
   log_->info("[Init] => validators");
 }
 
-void Application::initOrderingGate(const OtherOptions &other) {
+void Application::initOrderingGate() {
   PRECONDITION_TRUE(wsv);
 
   ordering_gate = ordering_init.initOrderingGate(
-      wsv, other.max_proposal_size, other.proposal_delay);
+      wsv, other_.max_proposal_size, other_.proposal_delay);
 
   POSTCONDITION_TRUE(ordering_gate);
 
@@ -144,20 +175,18 @@ void Application::initBlockLoader() {
   log_->info("[Init] => block loader");
 }
 
-void Application::initConsensusGate(const iroha::torii::config::Torii &torii,
-                                    const config::OtherOptions &other,
-                                    const iroha::keypair_t &keypair) {
+void Application::initConsensusGate() {
   PRECONDITION_TRUE(wsv);
   PRECONDITION_TRUE(simulator);
   PRECONDITION_TRUE(block_loader);
 
-  consensus_gate = yac_init.initConsensusGate(torii.listenAddress(),
+  consensus_gate = yac_init.initConsensusGate(torii_.listenAddress(),
                                               wsv,
                                               simulator,
                                               block_loader,
-                                              keypair,
-                                              other.vote_delay,
-                                              other.load_delay);
+                                              keypair_,
+                                              other_.vote_delay,
+                                              other_.load_delay);
 
   POSTCONDITION_TRUE(consensus_gate);
 
@@ -237,14 +266,14 @@ void Application::initQueryService() {
   log_->info("[Init] => query service");
 }
 
-void Application::run(const iroha::torii::config::Torii &torii) {
-  torii_server = std::make_unique<ServerRunner>(torii.listenAddress());
+void Application::run() {
+  torii_server = std::make_unique<ServerRunner>(torii_.listenAddress());
   POSTCONDITION_TRUE(torii_server);
 
   grpc::ServerBuilder builder;
   int port;
   builder.AddListeningPort(
-      torii.listenAddress(), grpc::InsecureServerCredentials(), &port);
+      peer_.listenAddress(), grpc::InsecureServerCredentials(), &port);
 
   PRECONDITION_TRUE(ordering_init.ordering_gate_transport);
   PRECONDITION_TRUE(ordering_init.ordering_service_transport);

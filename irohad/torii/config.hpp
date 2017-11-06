@@ -24,10 +24,15 @@ namespace iroha {
   namespace torii {
     namespace config {
       /**
-       * @struct Config::Torii
-       * @brief Config for torii gateway.
+       * @struct Torii
+       * @brief Config for torii gateway -- client API provider.
        */
-      class Torii : public iroha::config::Service {};
+      struct Torii : public iroha::config::Service {
+        Torii() {
+          host = defaults::toriiHost;
+          port = defaults::toriiPort;
+        }
+      };
     }
   }
 }

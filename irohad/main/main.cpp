@@ -40,9 +40,19 @@ using std::literals::chrono_literals::operator""ms;  // milliseconds
 #endif
 
 int main(int argc, char *argv[]) {
+  /// DEFAULTS
+  iroha::config::Peer peer{};
+  iroha::ametsuchi::config::Ametsuchi ametsuchi{};
+  iroha::torii::config::Torii torii{};
+  iroha::config::Cryptography crypto{};
+  iroha::config::OtherOptions other{};
+  std::string genesis_path;  // no default value
+
+  /// OPTIONS
   CLI::App main("iroha - simple decentralized ledger"s);
   main.require_subcommand(1);
-  main.add_config();
+  main.add_config();  // adds ini config. more:
+                      // https://github.com/CLIUtils/CLI11
   main.add_flag("-v,--version"s,
                 [&argv](size_t) {
                   std::cout << argv[0] << " version " IROHA_VERSION_STR "\n";
@@ -50,39 +60,17 @@ int main(int argc, char *argv[]) {
                 },
                 "Current version"s);
 
-  /// DEFAULTS
-  std::string genesis_path = defaults::blockStoragePath;
-
-  iroha::ametsuchi::config::Ametsuchi ametsuchi{};
-  ametsuchi.postgres.host = defaults::postgresHost;
-  ametsuchi.postgres.port = defaults::postgresPort;
-  ametsuchi.redis.host = defaults::redisHost;
-  ametsuchi.redis.port = defaults::redisPort;
-  ametsuchi.blockStorage.path = defaults::blockStoragePath;
-
-  iroha::torii::config::Torii torii{};
-  torii.host = defaults::toriiHost;
-  torii.port = defaults::toriiPort;
-
-  iroha::config::Cryptography crypto{};
-
-  iroha::config::OtherOptions other{};
-  other.load_delay = defaults::loadDelay;
-  other.vote_delay = defaults::voteDelay;
-  other.proposal_delay = defaults::proposalDelay;
-  other.max_proposal_size = defaults::proposalSize;
-
-  addPeerFlags(&main, &torii, &crypto);
+  addPeerFlags(&main, &peer, &torii, &crypto);
   addPostgresFlags(&main, &ametsuchi.postgres);
   addRedisFlags(&main, &ametsuchi.redis);
   addBlockStorageFlags(&main, &ametsuchi.blockStorage);
   addOtherOptionsFlags(&main, &other);
 
-  /// OPTIONS
   // start
   auto start = main.add_subcommand("start"s, "Start iroha"s);
-  start->set_callback(
-      [&]() { cli::handler::start(&ametsuchi, &crypto, &other, &torii); });
+  start->set_callback([&]() {
+    cli::handler::start(&ametsuchi, &crypto, &other, &peer, &torii);
+  });
 
   // ledger
   auto ledger =
@@ -92,9 +80,8 @@ int main(int argc, char *argv[]) {
   auto ledger_create = ledger->add_subcommand(
       "create"s, "Create new network with given genesis block"s);
   addCreateLedgerFlags(ledger_create, &genesis_path);
-  ledger_create->set_callback([&]() {
-    cli::handler::ledger::create(&ametsuchi, genesis_path);
-  });
+  ledger_create->set_callback(
+      [&]() { cli::handler::ledger::create(&ametsuchi, genesis_path); });
 
   // ledger clear
   auto ledger_clear =
@@ -108,7 +95,7 @@ int main(int argc, char *argv[]) {
   auto config =
       main.add_subcommand("config"s, "Dump current configuration"s, false);
   config->set_callback([&]() {
-    cli::handler::config::config(&ametsuchi, &other, &crypto, &torii);
+    cli::handler::config::config(&ametsuchi, &crypto, &other, &peer, &torii);
   });
 
   CLI11_PARSE(main, argc, argv);

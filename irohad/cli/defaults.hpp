@@ -30,11 +30,18 @@ namespace defaults {
 
   constexpr auto postgresHost = LOCALHOST;
   constexpr auto postgresPort = 6379;
+
+  constexpr auto peerHost = LOCALHOST;
+  constexpr auto peerPort = 10001;
+
   constexpr auto redisHost = LOCALHOST;
   constexpr auto redisPort = 5432;
+
   constexpr auto blockStoragePath = "blocks";
+
   constexpr auto toriiHost = LOCALHOST;
   constexpr auto toriiPort = 50051;
+
   constexpr auto loadDelay = 5000ms;
   constexpr auto voteDelay = 5000ms;
   constexpr auto proposalDelay = 5000ms;

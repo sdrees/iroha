@@ -41,7 +41,7 @@ namespace iroha {
      */
     class AmetsuchiTest : public ::testing::Test {
      public:
-      iroha::ametsuchi::config::Ametsuchi config;
+      config::Ametsuchi config;
 
       AmetsuchiTest(){
         auto log = logger::testLog("AmetsuchiTest");

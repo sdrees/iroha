@@ -50,35 +50,41 @@
 
 class Application {
  public:
-  Application();
+  Application(const iroha::ametsuchi::config::Ametsuchi &,
+              const iroha::torii::config::Torii &,
+              const iroha::config::Peer &,
+              const iroha::config::OtherOptions &,
+              const iroha::keypair_t);
 
   /**
    * Run worker threads for start performing
    */
-  virtual void run(const iroha::torii::config::Torii &);
+  virtual void run();
+
+  virtual void init();
 
   virtual ~Application();
 
+ protected:
   // -----------------------| component initialization |------------------------
 
-  virtual void initStorage(const iroha::ametsuchi::config::Ametsuchi &am);
+  virtual void initStorage();
+
   virtual void initProtoFactories();
 
   virtual void initPeerQuery();
 
-  virtual void initCryptoProvider(const iroha::keypair_t &);
+  virtual void initCryptoProvider();
 
   virtual void initValidators();
 
-  virtual void initOrderingGate(const iroha::config::OtherOptions &);
+  virtual void initOrderingGate();
 
   virtual void initSimulator();
 
   virtual void initBlockLoader();
 
-  virtual void initConsensusGate(const iroha::torii::config::Torii &,
-                                 const iroha::config::OtherOptions &,
-                                 const iroha::keypair_t &);
+  virtual void initConsensusGate();
 
   virtual void initSynchronizer();
 
@@ -141,6 +147,13 @@ class Application {
   std::thread server_thread;
 
   logger::Logger log_;
+
+  /* config parameters */
+  iroha::ametsuchi::config::Ametsuchi ametsuchi_config_;
+  iroha::torii::config::Torii torii_;
+  iroha::config::Peer peer_;
+  iroha::config::OtherOptions other_;
+  iroha::keypair_t keypair_;
 
  public:
   std::shared_ptr<iroha::ametsuchi::Storage> storage;

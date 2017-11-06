@@ -18,15 +18,16 @@
 #ifndef IROHA_MAIN_COMMON_HPP_
 #define IROHA_MAIN_COMMON_HPP_
 
+#include <chrono>
 #include <sstream>
 #include <string>
-#include <chrono>
+#include "cli/defaults.hpp"
 
 namespace iroha {
   namespace config {
 
     /**
-     * @struct Config::Service
+     * @struct Service
      * @brief Network service.
      */
     struct Service {
@@ -39,7 +40,7 @@ namespace iroha {
     };
 
     /**
-     * @struct Config::AuthService
+     * @struct AuthService
      * @brief Network service with authentication.
      */
     struct AuthService : public Service {
@@ -48,7 +49,7 @@ namespace iroha {
     };
 
     /**
-       * @struct Config::Cryptography
+       * @struct Cryptography
        * @brief Everything that is required for cryptography is here.
        */
     struct Cryptography {
@@ -57,10 +58,28 @@ namespace iroha {
     };
 
     struct OtherOptions {
+      OtherOptions()
+          : max_proposal_size(defaults::proposalSize),
+            proposal_delay(defaults::proposalDelay),
+            vote_delay(defaults::voteDelay),
+            load_delay(defaults::loadDelay) {}
+
       size_t max_proposal_size;
       std::chrono::milliseconds proposal_delay;
       std::chrono::milliseconds vote_delay;
       std::chrono::milliseconds load_delay;
+    };
+
+    /**
+     * @struct Peer
+     * @brief Config data for peer connection: consensus, block loader, ordering
+     * service.
+     */
+    struct Peer : public Service {
+      Peer() {
+        host = defaults::peerHost;
+        port = defaults::peerPort;
+      }
     };
   }  // namespace config
 }  // namespace iroha
